@@ -16,8 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@hono/node-server": "^2.0.4",
+    "@supabase/supabase-js": "^2.106.2",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "hono": "^4.12.23",
     "mysql2": "^3.22.4"
   }
 }
