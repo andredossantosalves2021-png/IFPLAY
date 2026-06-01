@@ -9,7 +9,7 @@ const app = new Hono()
 
 app.use('*', cors())
 
-// Serve os arquivos da pasta public
+
 app.use('/*', serveStatic({ root: './public' }))
 
 const supabase = createClient(
@@ -21,11 +21,11 @@ app.post('/login', async (c) => {
   try {
     const body = await c.req.json()
     
-    // CORRIGIDO: raFornecido tudo junto
+
     const raFornecido = String(body.ra).trim()
     const senhaFornecida = String(body.senha).trim()
 
-    // Busca no Supabase garantindo que a coluna 'ra' seja igual ao texto digitado
+
     const { data: usuario, error } = await supabase
       .from('usuario')
       .select('*')
@@ -41,7 +41,7 @@ app.post('/login', async (c) => {
       return c.json({ sucesso: false, mensagem: 'Usuário não encontrado' }, 404)
     }
 
-    // Compara as senhas convertendo ambas para texto comum
+
     if (String(usuario.senha).trim() !== senhaFornecida) {
       return c.json({ sucesso: false, mensagem: 'RA ou senha inválidos' }, 401)
     }
@@ -62,7 +62,7 @@ app.post('/login', async (c) => {
   }
 })
 
-// Mantém o servidor ativo ouvindo a porta 3333
+
 serve({
   fetch: app.fetch,
   port: 3333
