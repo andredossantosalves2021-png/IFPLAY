@@ -1,0 +1,111 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #1e3a8a;
+    margin-bottom: 25px;
+}
+
+.alert {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.reservas {
+    margin-top: 20px;
+}
+
+.reserva-item {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 5px solid #eab308;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.reserva-item strong {
+    display: block;
+    margin: 10px 0;
+    font-size: 18px;
+}
+
+.reserva-item p {
+    color: #4b5563;
+    margin-bottom: 5px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: white;
+    margin-right: 10px;
+}
+
+.ativo {
+    background: #22c55e;
+}
+
+.pendente {
+    background: #eab308;
+}
+
+html.dark-mode body {
+    background: #1e293b;
+}
+
+html.dark-mode .card,
+html.dark-mode .reserva-item {
+    background: #0f172a;
+    color: #f8fafc;
+    box-shadow: none;
+}
+
+html.dark-mode .reserva-item p {
+    color: #94a3b8;
+}
+
+html.dark-mode h1 {
+    color: #38bdf8;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 20px 10px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+}

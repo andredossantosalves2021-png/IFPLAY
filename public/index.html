@@ -4,32 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="stylesheet"
+          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="/LOGIN/login.css">
 
     <title>IFPlay</title>
 </head>
 <body>
 
     <div class="logo">
-        <img src="LOGO/logoifplay450.png" alt="Logo IFPlay">
+        <img src="/LOGO/logoifplay450.png" alt="Logo IFPlay">
     </div>
 
     <main class="container">
-
         <form id="loginForm">
 
             <h1>
                 Login
-                <span class="corum">
+                <span class="corum">IF</span><span class="cordois">play</span>
             </h1>
 
             <div class="input-login">
                 <input
                     type="text"
                     id="ra"
-                    name="ra"
                     placeholder="Digite sua matrícula"
                     required
                 >
@@ -40,7 +42,6 @@
                 <input
                     type="password"
                     id="senha"
-                    name="senha"
                     placeholder="Digite sua senha"
                     required
                 >
@@ -53,47 +54,9 @@
             </button>
 
         </form>
-
     </main>
 
-    <script>
-        const form = document.getElementById('loginForm')
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault()
-
-            const ra = document.getElementById('ra').value
-            const senha = document.getElementById('senha').value
-
-            try {
-
-                const resposta = await fetch('http://localhost:3333/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        ra,
-                        senha
-                    })
-                })
-
-                const dados = await resposta.json()
-
-                if (dados.sucesso) {
-                    alert('Login realizado com sucesso!')
-                    
-
-                } else {
-                    alert(dados.mensagem)
-                }
-
-            } catch (erro) {
-                console.error(erro)
-                alert('Erro ao conectar com o servidor.')
-            }
-        })
-    </script>
+    <script src="/LOGIN/login.js"></script>
 
 </body>
 </html>

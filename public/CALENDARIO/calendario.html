@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário de Reservas</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.4/css/all.min.css">
+
+    <link rel="stylesheet" href="calendario.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+
+        <div class="calendar-card">
+
+            <div class="calendar-header">
+                <h2>
+                    <i class="fa-regular fa-calendar"></i>
+                    Calendário de Reservas
+                </h2>
+
+                <p>
+                    Consulte os dias e horários reservados da quadra.
+                </p>
+            </div>
+
+
+            <div class="calendar-controls">
+
+                <button>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <h2>Maio 2026</h2>
+
+                <button>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+            </div>
+
+
+            <div class="week-days">
+                <span>Dom</span>
+                <span>Seg</span>
+                <span>Ter</span>
+                <span>Qua</span>
+                <span>Qui</span>
+                <span>Sex</span>
+                <span>Sáb</span>
+            </div>
+
+
+            <div class="calendar-grid">
+
+                <div class="day empty"></div>
+                <div class="day empty"></div>
+
+                <div class="day">
+                    <strong>1</strong>
+                </div>
+
+                <div class="day">
+                    <strong>2</strong>
+                    <div class="reservation">
+                        Futebol • 14:00
+                    </div>
+                </div>
+
+                <div class="day">
+                    <strong>3</strong>
+                </div>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="/calendario.js"></script>
+
+</body>
+
+</html>

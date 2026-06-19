@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas Ativas</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="reservas.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+
+            <div class="alert">
+                Escolha um horário disponível para evitar conflitos.
+            </div>
+
+
+            <div class="reservas">
+
+                <h1>Reservas Ativas</h1>
+
+            </div>
+
+            <div id="listaReservas">
+
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
