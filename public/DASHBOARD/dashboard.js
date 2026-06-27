@@ -1,7 +1,7 @@
 const usuario = JSON.parse(localStorage.getItem('usuario'));
 
 if (!usuario) {
-    window.location.replace('../LOGIN/index.html');
+    window.location.replace('../index.html');
 }
 
 document.getElementById('boasVindas').textContent =
@@ -69,6 +69,6 @@ iframe.addEventListener('load', () => {
 document.getElementById('btnSair').addEventListener('click', () => {
     if (confirm('Deseja realmente sair do sistema?')) {
         localStorage.clear();
-        window.location.replace('../LOGIN/index.html');
+        window.location.replace('../index.html');
     }
 });
