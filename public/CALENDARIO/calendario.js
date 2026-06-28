@@ -38,9 +38,19 @@ function gerarCalendario(ano, mes) {
         grid.appendChild(vazio);
     }
 
-    for (let dia = 1; dia <= totalDias; dia++) {
-        const celula = document.createElement('div');
-        celula.className = 'day';
+const hoje = new Date();
+
+for (let dia = 1; dia <= totalDias; dia++) {
+    const celula = document.createElement('div');
+    celula.className = 'day';
+
+    const ehHoje = dia === hoje.getDate() &&
+        mes === hoje.getMonth() &&
+        ano === hoje.getFullYear();
+
+    if (ehHoje) {
+        celula.classList.add('hoje');
+    };
 
         const numero = document.createElement('strong');
         numero.textContent = dia;
