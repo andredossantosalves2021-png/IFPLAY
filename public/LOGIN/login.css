@@ -73,9 +73,8 @@ body {
 .logo {
   position: absolute;
   top: 30px;
-  left: 35%;
-  transform: translateX(-50%);
-  transform: translateY(-30%);
+  left: 50%;
+  transform: translate(-50%, -30%);
 }
 .corum {
     color: #008000;
