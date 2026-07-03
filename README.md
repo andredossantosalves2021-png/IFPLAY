@@ -119,8 +119,9 @@ As principais tabelas são:
 Para configurar o ambiente local, crie um arquivo `.env` na raiz do projeto:
 
 ```env
-SUPABASE_URL=sua_url_do_supabase
-SUPABASE_KEY=sua_publishable_key
+SUPABASE_URL=https://sxufrnplreddigozngzi.supabase.co
+
+SUPABASE_KEY=sb_publishable_bhJqtKY1mk57Fa-wF4xuHQ_wr96lVkn
 ```
 
 Após criar o projeto no Supabase, execute os scripts SQL disponibilizados pela equipe para gerar as tabelas e relacionamentos necessários.
