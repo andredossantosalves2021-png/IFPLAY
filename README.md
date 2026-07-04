@@ -142,7 +142,7 @@ Após criar o projeto no Supabase, execute os scripts SQL disponibilizados pela 
 
 * André Alves
 * Arthur Luiz
-* Claudio Junior
+* Claudio Junio
 * Diogo Rocha
 * Geovanna
 * Othávio Camillo
