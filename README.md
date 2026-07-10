@@ -86,6 +86,7 @@ O sistema ficará disponível em:
 
 ```text
 http://localhost:3333
+https://ifplay-production.up.railway.app/index.html
 ```
 
 ## Salvando Alterações
