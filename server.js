@@ -63,9 +63,120 @@ app.post('/login', async (c) => {
 })
 
 
+app.post('/reservas', async (c) => {
+
+    try {
+
+        const body = await c.req.json();
+
+        const {
+            data_reserva,
+            horario_inicio,
+            horario_fim,
+            modalidade,
+            tipo_reserva,
+            recorrente,
+            id_usuario
+        } = body;
+
+        if (
+            !data_reserva ||
+            !horario_inicio ||
+            !horario_fim ||
+            !modalidade ||
+            !id_usuario
+        ) {
+
+            return c.json({
+                sucesso: false,
+                mensagem: 'Preencha todos os campos.'
+            }, 400);
+
+        }
+
+        const { data, error } =
+            await supabase
+                .from('reserva')
+                .insert([{
+                    data_reserva,
+                    horario_inicio,
+                    horario_fim,
+                    modalidade,
+                    status: 'PENDENTE',
+                    tipo_reserva,
+                    recorrente,
+                    id_usuario
+                }])
+                .select();
+
+        if (error) {
+
+            console.error(error);
+
+            return c.json({
+                sucesso: false,
+                mensagem: error.message
+            }, 400);
+
+        }
+
+        return c.json({
+            sucesso: true,
+            reserva: data[0]
+        });
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        return c.json({
+            sucesso: false,
+            mensagem: 'Erro interno do servidor.'
+        }, 500);
+
+    }
+
+});
+
 serve({
   fetch: app.fetch,
   port: 3333
 }, (info) => {
   console.log(`Servidor rodando em http://localhost:${info.port}`)
 })
+
+app.get('/reservas', async (c) => {
+
+    try {
+
+        const agora = new Date();
+        const hoje = agora.toLocaleDateString('en-CA', {
+          timeZone: 'America/Sao_Paulo'
+        });
+        const horaAtual = agora.toLocaleTimeString('en-GB', {
+            timeZone: 'America/Sao_Paulo',
+            hour12: false
+        });
+
+        const { data, error } = await supabase
+            .from('reserva')
+            .select('*, usuario(nome)')
+            .or(`data_reserva.gt.${hoje},and(data_reserva.eq.${hoje},horario_fim.gt.${horaAtual})`)
+            .neq('status', 'CANCELADA')
+            .order('data_reserva', { ascending: true })
+            .order('horario_inicio', { ascending: true });
+
+
+        if (error) {
+            console.error(error);
+            return c.json({ sucesso: false, mensagem: error.message }, 400);
+        }
+
+        return c.json({ sucesso: true, reservas: data });
+
+    } catch (erro) {
+        console.error(erro);
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+    }
+
+});

@@ -7,8 +7,6 @@ let dataAtual = new Date();
 let anoAtual = dataAtual.getFullYear();
 let mesAtual = dataAtual.getMonth();
 
-// DADOS DE EXEMPLO — depois substituir por uma busca real no Supabase
-// Formato da chave: 'ano-mes-dia' (mes começa em 0 = Janeiro)
 const reservasExemplo = {
     '2026-4-2': [
         { esporte: 'Futebol', horario: '14:00' }

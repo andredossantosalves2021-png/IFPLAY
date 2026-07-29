@@ -8,36 +8,84 @@ if (!usuario) {
         '../LOGIN/index.html';
 }
 
+// MODO ESCURO
 
+if (localStorage.getItem('tema') === 'true') {
+    document.documentElement.classList.add('dark-mode');
+}
+
+// ELEMENTOS DA PÁGINA
 
 const atividade =
-    document.getElementById(
-        'atividade'
-    );
+    document.getElementById('atividade');
 
 const outraAtividade =
-    document.getElementById(
-        'outraAtividade'
-    );
+    document.getElementById('outraAtividade');
+
+const dataReserva =
+    document.getElementById('dataReserva');
+
+const nomeInput =
+    document.getElementById('nome');
+
+const ocupacaoSelect =
+    document.getElementById('ocupacao');
+
+const checkbox =
+    document.getElementById('agendamentoRecorrente');
+
+const agendamentoUnico =
+    document.getElementById('agendamentoUnico');
+
+const camposRecorrentes =
+    document.getElementById('camposRecorrentes');
+
+const botao =
+    document.querySelector('.submit-btn');
+
+const horarioInicio =
+    document.getElementById('horarioInicio');
+
+const duracao =
+    document.getElementById('duracao');
+
+const resumoReserva =
+    document.getElementById('resumoReserva');
+
+const formReserva =
+    document.getElementById('formReserva');
+
+// DADOS DO USUÁRIO
+
+nomeInput.value =
+    usuario.nome;
+
+ocupacaoSelect.value =
+    usuario.tipo_usuario;
+
+// CAMPO "OUTRO"
+
 
 atividade.addEventListener(
     'change',
     () => {
 
         if (atividade.value === 'Outro') {
-            outraAtividade.style.display = 'flex';
+
+            outraAtividade.style.display =
+                'flex';
+
         } else {
-            outraAtividade.style.display = 'none';
+
+            outraAtividade.style.display =
+                'none';
+
         }
+
     }
 );
 
-
-
-const dataReserva =
-    document.getElementById(
-        'dataReserva'
-    );
+// LIMITE DE DATA
 
 const hoje =
     new Date();
@@ -51,55 +99,16 @@ dataReserva.min =
 dataReserva.max =
     `${anoAtual + 1}-12-31`;
 
+// RESERVA RECORRENTE
 
-
-const nomeInput =
-    document.getElementById(
-        'nome'
-    );
-
-const ocupacaoSelect =
-    document.getElementById(
-        'ocupacao'
-    );
-
-nomeInput.value =
-    usuario.nome;
-
-ocupacaoSelect.value =
-    usuario.tipo_usuario;
-
-
-
-const checkbox =
-    document.getElementById(
-        'agendamentoRecorrente'
-    );
-
-const agendamentoUnico =
-    document.getElementById(
-        'agendamentoUnico'
-    );
-
-const camposRecorrentes =
-    document.getElementById(
-        'camposRecorrentes'
-    );
-
-const botao =
-    document.querySelector(
-        '.submit-btn'
-    );
-
-if (
-    usuario.tipo_usuario === 'ALUNO'
-) {
+if (usuario.tipo_usuario === 'ALUNO') {
 
     checkbox.parentElement.style.display =
         'none';
 
     camposRecorrentes.style.display =
         'none';
+
 }
 
 checkbox.addEventListener(
@@ -127,35 +136,13 @@ checkbox.addEventListener(
 
             botao.textContent =
                 'Confirmar Reserva';
+
         }
+
     }
 );
 
-
-
-if (localStorage.getItem('tema') === 'true') {
-    document.documentElement.classList.add('dark-mode');
-}
-
-
-
-const horarioInicio =
-    document.getElementById(
-        'horarioInicio'
-    );
-
-const duracao =
-    document.getElementById(
-        'duracao'
-    );
-
-const resumoReserva =
-    document.getElementById(
-        'resumoReserva'
-    );
-
-
-
+// HORÁRIOS
 
 for (
     let hora = 7;
@@ -169,9 +156,7 @@ for (
         ':00';
 
     const option =
-        document.createElement(
-            'option'
-        );
+        document.createElement('option');
 
     option.value =
         horario;
@@ -179,13 +164,11 @@ for (
     option.textContent =
         horario;
 
-    horarioInicio.appendChild(
-        option
-    );
+    horarioInicio.appendChild(option);
+
 }
 
-
-
+// RESUMO DA RESERVA
 
 function atualizarResumo() {
 
@@ -193,9 +176,7 @@ function atualizarResumo() {
         horarioInicio.value;
 
     const horas =
-        Number(
-            duracao.value
-        );
+        Number(duracao.value);
 
     const horaInicial =
         Number(
@@ -205,22 +186,20 @@ function atualizarResumo() {
     let horaFinal =
         horaInicial + horas;
 
-    if (
-        horaFinal > 23
-    ) {
+    if (horaFinal > 23) {
+
         horaFinal = 23;
+
     }
 
     const final =
-        String(
-            horaFinal
-        ).padStart(
-            2,
-            '0'
-        ) + ':00';
+        String(horaFinal)
+            .padStart(2, '0') +
+        ':00';
 
     resumoReserva.textContent =
         `${inicio} às ${final}`;
+
 }
 
 horarioInicio.addEventListener(
@@ -234,3 +213,110 @@ duracao.addEventListener(
 );
 
 atualizarResumo();
+
+// SALVAR RESERVA
+
+formReserva.addEventListener(
+    'submit',
+    async (e) => {
+
+        e.preventDefault();
+
+        const inicio =
+            horarioInicio.value;
+
+        const horas =
+            Number(duracao.value);
+
+        const horaFinal =
+            String(
+                Number(
+                    inicio.split(':')[0]
+                ) + horas
+            ).padStart(2, '0') + ':00';
+
+        const modalidade =
+            atividade.value === 'Outro'
+                ? document.getElementById('atividadePersonalizada').value
+                : atividade.value;
+
+        try {
+
+            const resposta =
+                await fetch('http://localhost:3333/reservas', {
+
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body: JSON.stringify({
+
+                        data_reserva:
+                            dataReserva.value,
+
+                        horario_inicio:
+                            inicio,
+
+                        horario_fim:
+                            horaFinal,
+
+                        modalidade,
+
+                        tipo_reserva:
+                            'JOGO_LIVRE',
+
+                        recorrente:
+                            checkbox.checked,
+
+                        id_usuario:
+                            usuario.id_usuario
+
+                    })
+
+                });
+
+            const resultado =
+                await resposta.json();
+
+            if (resultado.sucesso) {
+
+                alert(
+                    'Reserva criada com sucesso!'
+                );
+
+                formReserva.reset();
+
+                nomeInput.value =
+                    usuario.nome;
+
+                ocupacaoSelect.value =
+                    usuario.tipo_usuario;
+
+                outraAtividade.style.display =
+                    'none';
+
+                atualizarResumo();
+
+            } else {
+
+                alert(
+                    resultado.mensagem
+                );
+
+            }
+
+        } catch (erro) {
+
+            console.error(erro);
+
+            alert(
+                'Erro ao conectar com o servidor.'
+            );
+
+        }
+
+    }
+);

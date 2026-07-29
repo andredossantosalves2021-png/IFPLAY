@@ -131,7 +131,6 @@ body {
     background: #059669;
 }
 
-/* ===== MODO ESCURO — preto/cinza, sem azul (só a moldura externa do dashboard fica azul) ===== */
 
 html.dark-mode body {
     background: #1e293b;
