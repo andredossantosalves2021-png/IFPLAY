@@ -102,7 +102,8 @@ git push
 Caso seja necessário reiniciar o servidor Node.js:
 
 ```powershell
-Stop-Process -Name node -Force
+netstat -ano | findstr :3333
+taskkill /PID <numero_que_apareceu> /F
 npm run dev
 ```
 

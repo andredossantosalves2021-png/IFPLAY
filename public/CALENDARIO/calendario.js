@@ -7,23 +7,60 @@ let dataAtual = new Date();
 let anoAtual = dataAtual.getFullYear();
 let mesAtual = dataAtual.getMonth();
 
-const reservasExemplo = {
-    '2026-4-2': [
-        { esporte: 'Futebol', horario: '14:00' }
-    ],
-    '2026-4-10': [
-        { esporte: 'Vôlei', horario: '09:00' },
-        { esporte: 'Basquete', horario: '16:00' },
-        { esporte: 'Futsal', horario: '18:00' }
-    ]
-};
+let reservas = {};
 
 const tituloMes = document.querySelector('.calendar-controls h2');
 const grid = document.querySelector('.calendar-grid');
 const btnAnterior = document.querySelector('.calendar-controls button:first-child');
 const btnProximo = document.querySelector('.calendar-controls button:last-child');
 
+async function carregarReservas() {
+
+    try {
+
+        const resposta =
+            await fetch('http://localhost:3333/reservas');
+
+        const resultado =
+            await resposta.json();
+
+        if (!resultado.sucesso) {
+            console.error(resultado.mensagem);
+            return;
+        }
+
+        reservas = {};
+
+        resultado.reservas.forEach(reserva => {
+
+            const partes =
+                reserva.data_reserva.split('-');
+
+            const chave =
+                `${partes[0]}-${Number(partes[1]) - 1}-${Number(partes[2])}`;
+
+            if (!reservas[chave]) {
+                reservas[chave] = [];
+            }
+
+            reservas[chave].push({
+                esporte: reserva.modalidade,
+                horario: `${reserva.horario_inicio} - ${reserva.horario_fim}`,
+                usuario: reserva.usuario.nome
+            });
+
+        });
+
+        gerarCalendario(anoAtual, mesAtual);
+
+    } catch (erro) {
+        console.error('Erro ao carregar reservas:', erro);
+    }
+
+}
+
 function gerarCalendario(ano, mes) {
+
     grid.innerHTML = '';
     tituloMes.textContent = `${meses[mes]} ${ano}`;
 
@@ -36,28 +73,31 @@ function gerarCalendario(ano, mes) {
         grid.appendChild(vazio);
     }
 
-const hoje = new Date();
+    const hoje = new Date();
 
-for (let dia = 1; dia <= totalDias; dia++) {
-    const celula = document.createElement('div');
-    celula.className = 'day';
+    for (let dia = 1; dia <= totalDias; dia++) {
 
-    const ehHoje = dia === hoje.getDate() &&
-        mes === hoje.getMonth() &&
-        ano === hoje.getFullYear();
+        const celula = document.createElement('div');
+        celula.className = 'day';
 
-    if (ehHoje) {
-        celula.classList.add('hoje');
-    };
+        const ehHoje =
+            dia === hoje.getDate() &&
+            mes === hoje.getMonth() &&
+            ano === hoje.getFullYear();
+
+        if (ehHoje) {
+            celula.classList.add('hoje');
+        }
 
         const numero = document.createElement('strong');
         numero.textContent = dia;
         celula.appendChild(numero);
 
         const chave = `${ano}-${mes}-${dia}`;
-        const reservasDoDia = reservasExemplo[chave];
+        const reservasDoDia = reservas[chave];
 
         if (reservasDoDia) {
+
             reservasDoDia.slice(0, 2).forEach(reserva => {
                 const tag = document.createElement('div');
                 tag.className = 'reservation';
@@ -71,14 +111,18 @@ for (let dia = 1; dia <= totalDias; dia++) {
                 mais.textContent = `+${reservasDoDia.length - 2} mais`;
                 celula.appendChild(mais);
             }
+
         }
 
         celula.addEventListener('click', () => abrirDetalhes(dia, ano, mes, reservasDoDia));
         grid.appendChild(celula);
+
     }
+
 }
 
-function abrirDetalhes(dia, ano, mes, reservas) {
+function abrirDetalhes(dia, ano, mes, reservasDoDia) {
+
     const modalExistente = document.querySelector('.modal-overlay');
     if (modalExistente) modalExistente.remove();
 
@@ -92,13 +136,19 @@ function abrirDetalhes(dia, ano, mes, reservas) {
     titulo.textContent = `${dia} de ${meses[mes]} de ${ano}`;
     modal.appendChild(titulo);
 
-    if (reservas && reservas.length > 0) {
-        reservas.forEach(reserva => {
+    if (reservasDoDia && reservasDoDia.length > 0) {
+
+        reservasDoDia.forEach(reserva => {
             const item = document.createElement('div');
             item.className = 'reservation-item';
-            item.textContent = `${reserva.esporte} • ${reserva.horario}`;
+            item.innerHTML = `
+                <strong>${reserva.esporte}</strong><br>
+                ${reserva.horario}<br>
+                ${reserva.usuario}
+            `;
             modal.appendChild(item);
         });
+
     } else {
         const vazio = document.createElement('p');
         vazio.className = 'sem-reservas';
@@ -118,6 +168,7 @@ function abrirDetalhes(dia, ano, mes, reservas) {
     });
 
     document.body.appendChild(overlay);
+
 }
 
 btnAnterior.addEventListener('click', () => {
@@ -138,4 +189,4 @@ btnProximo.addEventListener('click', () => {
     gerarCalendario(anoAtual, mesAtual);
 });
 
-gerarCalendario(anoAtual, mesAtual);
+carregarReservas();
