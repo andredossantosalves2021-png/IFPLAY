@@ -66,11 +66,14 @@ function renderizarReservas(reservas) {
         const classeStatus =
             reserva.status === 'PENDENTE' ? 'pendente' : 'ativo';
 
+        const classeBorda =
+            reserva.status === 'PENDENTE' ? 'borda-pendente' : 'borda-aprovada';
+            
         const nomeUsuario =
             reserva.usuario?.nome ?? 'Usuário';
 
         const item = document.createElement('div');
-        item.className = 'reserva-item';
+        item.className = `reserva-item ${classeBorda}`;
 
         item.innerHTML = `
             <span class="badge ${classeStatus}">${reserva.status}</span>
@@ -101,12 +104,28 @@ function renderizarReservas(reservas) {
             acoes.appendChild(btnCancelar);
             item.appendChild(acoes);
 
+        } else if (filtroAtual === 'minhas') {
+
+            const acoes = document.createElement('div');
+            acoes.className = 'acoes-admin';
+
+            const btnCancelar = document.createElement('button');
+            btnCancelar.className = 'btn-cancelar';
+            btnCancelar.textContent = 'Cancelar Reserva';
+            btnCancelar.addEventListener('click', () => {
+                if (confirm('Tem certeza que deseja cancelar essa reserva?')) {
+                    atualizarStatus(reserva.id_reserva, 'CANCELADA');
+                }
+            });
+
+            acoes.appendChild(btnCancelar);
+            item.appendChild(acoes);
+
         }
 
         listaReservas.appendChild(item);
 
     });
-
 }
 
 async function atualizarStatus(idReserva, novoStatus) {
@@ -119,7 +138,7 @@ async function atualizarStatus(idReserva, novoStatus) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     novoStatus,
-                    id_usuario_admin: usuario.id_usuario
+                    id_usuario_acao: usuario.id_usuario
                 })
             });
 

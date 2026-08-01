@@ -206,20 +206,41 @@ app.patch('/reservas/:id', async (c) => {
 
         const id = c.req.param('id');
         const body = await c.req.json();
-        const { novoStatus, id_usuario_admin } = body;
+        const { novoStatus, id_usuario_acao } = body;
 
         if (!['APROVADA', 'CANCELADA'].includes(novoStatus)) {
             return c.json({ sucesso: false, mensagem: 'Status inválido.' }, 400);
         }
 
-        const { data: admin, error: erroAdmin } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq('id_usuario', id_usuario_admin)
+        const { data: reserva, error: erroReserva } = await supabase
+            .from('reserva')
+            .select('id_usuario')
+            .eq('id_reserva', id)
             .maybeSingle();
 
-        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
-            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem fazer isso.' }, 403);
+        if (erroReserva || !reserva) {
+            return c.json({ sucesso: false, mensagem: 'Reserva não encontrada.' }, 404);
+        }
+
+        const { data: usuarioAcao, error: erroUsuario } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', id_usuario_acao)
+            .maybeSingle();
+
+        if (erroUsuario || !usuarioAcao) {
+            return c.json({ sucesso: false, mensagem: 'Usuário inválido.' }, 400);
+        }
+
+        const ehAdmin = usuarioAcao.tipo_usuario === 'ADMINISTRADOR';
+        const ehDono = Number(reserva.id_usuario) === Number(id_usuario_acao);
+
+        if (novoStatus === 'APROVADA' && !ehAdmin) {
+            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem aprovar.' }, 403);
+        }
+
+        if (novoStatus === 'CANCELADA' && !ehAdmin && !ehDono) {
+            return c.json({ sucesso: false, mensagem: 'Você só pode cancelar suas próprias reservas.' }, 403);
         }
 
         const { data, error } = await supabase

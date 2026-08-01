@@ -49,6 +49,14 @@ h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.reserva-item.borda-aprovada {
+    border-left-color: #22c55e;
+}
+
+.reserva-item.borda-pendente {
+    border-left-color: #eab308;
+}
+
 .reserva-item strong {
     display: block;
     margin: 10px 0;

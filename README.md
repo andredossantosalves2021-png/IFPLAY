@@ -104,7 +104,7 @@ Caso seja necessário reiniciar o servidor Node.js:
 ```powershell
 netstat -ano | findstr :3333
 taskkill /PID <numero_que_apareceu> /F
-npm run dev
+npm run dev 
 ```
 
 ## Banco de Dados
