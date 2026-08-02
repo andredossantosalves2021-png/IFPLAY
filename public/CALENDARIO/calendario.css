@@ -230,6 +230,27 @@ body {
     margin-top: 10px;
 }
 
+.tag-jogo {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.tag-aula {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tag-evento {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.tipo-label {
+    font-size: 12px;
+    font-weight: normal;
+    color: #6b7280;
+}
+
 
 html.dark-mode body {
     background: #1e293b;

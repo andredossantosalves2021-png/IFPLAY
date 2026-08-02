@@ -65,82 +65,6 @@ app.post('/login', async (c) => {
   }
 })
 
-
-app.post('/reservas', async (c) => {
-
-    try {
-
-        const body = await c.req.json();
-
-        const {
-            data_reserva,
-            horario_inicio,
-            horario_fim,
-            modalidade,
-            tipo_reserva,
-            recorrente,
-            id_usuario
-        } = body;
-
-        if (
-            !data_reserva ||
-            !horario_inicio ||
-            !horario_fim ||
-            !modalidade ||
-            !id_usuario
-        ) {
-
-            return c.json({
-                sucesso: false,
-                mensagem: 'Preencha todos os campos.'
-            }, 400);
-
-        }
-
-        const { data, error } =
-            await supabase
-                .from('reserva')
-                .insert([{
-                    data_reserva,
-                    horario_inicio,
-                    horario_fim,
-                    modalidade,
-                    status: 'PENDENTE',
-                    tipo_reserva,
-                    recorrente,
-                    id_usuario
-                }])
-                .select();
-
-        if (error) {
-
-            console.error(error);
-
-            return c.json({
-                sucesso: false,
-                mensagem: error.message
-            }, 400);
-
-        }
-
-        return c.json({
-            sucesso: true,
-            reserva: data[0]
-        });
-
-    } catch (erro) {
-
-        console.error(erro);
-
-        return c.json({
-            sucesso: false,
-            mensagem: 'Erro interno do servidor.'
-        }, 500);
-
-    }
-
-});
-
 app.get('/reservas', async (c) => {
 
     try {
@@ -255,6 +179,142 @@ app.patch('/reservas/:id', async (c) => {
         }
 
         return c.json({ sucesso: true, reserva: data[0] });
+
+    } catch (erro) {
+        console.error(erro);
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+    }
+
+});
+
+app.post('/reservas', async (c) => {
+
+    try {
+
+        const body = await c.req.json();
+
+        const {
+            data_reserva,
+            horario_inicio,
+            horario_fim,
+            modalidade,
+            tipo_reserva,
+            recorrente,
+            id_usuario,
+            id_recorrencia
+        } = body;
+
+        if (
+            !data_reserva ||
+            !horario_inicio ||
+            !horario_fim ||
+            !modalidade ||
+            !id_usuario
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Preencha todos os campos.' }, 400);
+        }
+
+        const { data: criador, error: erroCriador } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', id_usuario)
+            .maybeSingle();
+
+        if (erroCriador || !criador) {
+            return c.json({ sucesso: false, mensagem: 'Usuário inválido.' }, 400);
+        }
+
+        const status =
+            criador.tipo_usuario === 'ALUNO' ? 'PENDENTE' : 'APROVADA';
+
+        const { data, error } =
+            await supabase
+                .from('reserva')
+                .insert([{
+                    data_reserva,
+                    horario_inicio,
+                    horario_fim,
+                    modalidade,
+                    status,
+                    tipo_reserva,
+                    recorrente,
+                    id_usuario,
+                    id_recorrencia: id_recorrencia || null
+                }])
+                .select();
+
+        if (error) {
+            console.error(error);
+            return c.json({ sucesso: false, mensagem: error.message }, 400);
+        }
+
+        return c.json({ sucesso: true, reserva: data[0] });
+
+    } catch (erro) {
+        console.error(erro);
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+    }
+
+});
+
+
+app.get('/reclamacoes', async (c) => {
+
+    try {
+
+        const { data, error } = await supabase
+            .from('reclamacao')
+            .select('*, usuario(nome)')
+            .order('data_envio', { ascending: false });
+
+        if (error) {
+            console.error(error);
+            return c.json({ sucesso: false, mensagem: error.message }, 400);
+        }
+
+        return c.json({ sucesso: true, reclamacoes: data });
+
+    } catch (erro) {
+        console.error(erro);
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+    }
+
+});
+
+app.patch('/reclamacoes/:id', async (c) => {
+
+    try {
+
+        const id = c.req.param('id');
+        const body = await c.req.json();
+        const { resposta, id_usuario_admin } = body;
+
+        if (!resposta) {
+            return c.json({ sucesso: false, mensagem: 'Escreva uma resposta.' }, 400);
+        }
+
+        const { data: admin, error: erroAdmin } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', id_usuario_admin)
+            .maybeSingle();
+
+        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem responder.' }, 403);
+        }
+
+        const { data, error } = await supabase
+            .from('reclamacao')
+            .update({ resposta, status: 'RESOLVIDA' })
+            .eq('id_reclamacao', id)
+            .select();
+
+        if (error) {
+            console.error(error);
+            return c.json({ sucesso: false, mensagem: error.message }, 400);
+        }
+
+        return c.json({ sucesso: true, reclamacao: data[0] });
 
     } catch (erro) {
         console.error(erro);

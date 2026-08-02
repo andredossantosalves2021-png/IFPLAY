@@ -1,0 +1,186 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 18px;
+}
+
+.input-group label {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.input-group textarea,
+.input-group input[type="file"] {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #10b981;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.submit-btn:hover {
+    background: #059669;
+}
+
+.reclamacao-item {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 5px solid #eab308;
+}
+
+.reclamacao-item.borda-resolvida {
+    border-left-color: #22c55e;
+}
+
+.reclamacao-item.borda-analisada {
+    border-left-color: #3b82f6;
+}
+
+.reclamacao-item img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.reclamacao-item p {
+    color: #374151;
+    margin-bottom: 5px;
+}
+
+.resposta-admin {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.resposta-admin strong {
+    color: #1e3a8a;
+}
+
+.form-resposta {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.form-resposta input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.form-resposta button {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.badge.pendente { background: #eab308; }
+.badge.analisada { background: #3b82f6; }
+.badge.resolvida { background: #22c55e; }
+
+.preview-foto {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f3f4f6;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+#btnRemoverFoto {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+html.dark-mode .preview-foto {
+    background: #1e293b;
+}
+
+html.dark-mode body {
+    background: #1e293b;
+}
+
+html.dark-mode .card,
+html.dark-mode .reclamacao-item {
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+html.dark-mode .reclamacao-item p {
+    color: #94a3b8;
+}
+
+html.dark-mode h1 {
+    color: #38bdf8;
+}

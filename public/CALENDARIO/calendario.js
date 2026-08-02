@@ -46,7 +46,8 @@ async function carregarReservas() {
             reservas[chave].push({
                 esporte: reserva.modalidade,
                 horario: `${reserva.horario_inicio} - ${reserva.horario_fim}`,
-                usuario: reserva.usuario.nome
+                usuario: reserva.usuario.nome,
+                tipo: reserva.tipo_reserva
             });
 
         });
@@ -100,7 +101,10 @@ function gerarCalendario(ano, mes) {
 
             reservasDoDia.slice(0, 2).forEach(reserva => {
                 const tag = document.createElement('div');
-                tag.className = 'reservation';
+                const classeTipo = reserva.tipo === 'AULA' ? 'tag-aula'
+                    : reserva.tipo === 'EVENTO' ? 'tag-evento'
+                    : 'tag-jogo';
+                tag.className = `reservation ${classeTipo}`;
                 tag.textContent = `${reserva.esporte} • ${reserva.horario}`;
                 celula.appendChild(tag);
             });
@@ -142,7 +146,7 @@ function abrirDetalhes(dia, ano, mes, reservasDoDia) {
             const item = document.createElement('div');
             item.className = 'reservation-item';
             item.innerHTML = `
-                <strong>${reserva.esporte}</strong><br>
+                <strong>${reserva.esporte}</strong> <span class="tipo-label">${reserva.tipo}</span><br>
                 ${reserva.horario}<br>
                 ${reserva.usuario}
             `;

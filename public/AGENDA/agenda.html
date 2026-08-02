@@ -68,6 +68,15 @@
                 </div>
 
                 <div class="input-group">
+                    <label>Tipo de Reserva</label>
+                            <select id="tipoReserva">
+                                <option value="JOGO_LIVRE" selected>Jogo Livre</option>
+                                <option value="AULA">Aula</option>
+                                <option value="EVENTO">Evento</option>
+                            </select>
+                </div>
+
+                <div class="input-group">
                     <label>Esporte/Atividade</label>
 
                     <select id="atividade">
@@ -97,6 +106,8 @@
                     </select>
                 </div>
 
+                
+
                 <div class="input-group" id="outraAtividade" style="display: none;">
                     <label>
                         Qual atividade?
@@ -104,6 +115,7 @@
 
                     <input type="text" id="atividadePersonalizada" placeholder="Digite a atividade">
                 </div>
+
 
 
                 <div id="agendamentoUnico">
@@ -162,23 +174,42 @@
                     </div>
 
                     <div id="camposRecorrentes" style="display: none;">
+
                         <div class="linha">
                             <div class="input-group">
+                                <label>Data de Início</label>
+                                <input type="date" id="dataInicioRecorrente">
+                            </div>
+
+                            <div class="input-group">
                                 <label>Dia da semana</label>
-                                <select>
-                                    <option>Segunda-feira</option>
-                                    <option>Terça-feira</option>
-                                    <option>Quarta-feira</option>
-                                    <option>Quinta-feira</option>
-                                    <option>Sexta-feira</option>
+                                <select id="diaSemana">
+                                    <option value="1">Segunda-feira</option>
+                                    <option value="2">Terça-feira</option>
+                                    <option value="3">Quarta-feira</option>
+                                    <option value="4">Quinta-feira</option>
+                                    <option value="5">Sexta-feira</option>
                                 </select>
                             </div>
 
                             <div class="input-group">
                                 <label>Quantidade de semanas</label>
-                                <input type="number" min="1" max="16">
+                                <input type="number" id="quantidadeSemanas" min="1" max="16" value="1">
                             </div>
                         </div>
+
+                        <div class="linha">
+                            <div class="input-group">
+                                <label>Horário Inicial</label>
+                                <input type="time" id="horarioInicioRecorrente">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Horário Final</label>
+                                <input type="time" id="horarioFimRecorrente">
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 

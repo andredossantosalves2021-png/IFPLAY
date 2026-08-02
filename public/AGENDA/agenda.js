@@ -55,6 +55,24 @@ const resumoReserva =
 const formReserva =
     document.getElementById('formReserva');
 
+const diaSemanaSelect =
+    document.getElementById('diaSemana');
+
+const quantidadeSemanasInput =
+    document.getElementById('quantidadeSemanas');
+
+const horarioInicioRecorrente =
+    document.getElementById('horarioInicioRecorrente');
+
+const horarioFimRecorrente =
+    document.getElementById('horarioFimRecorrente');
+
+const tipoReservaSelect =
+    document.getElementById('tipoReserva');
+
+const dataInicioRecorrente =
+    document.getElementById('dataInicioRecorrente');
+
 // DADOS DO USUÁRIO
 
 nomeInput.value =
@@ -98,6 +116,12 @@ dataReserva.min =
 
 dataReserva.max =
     `${anoAtual + 1}-12-31`;
+
+dataReserva.min = `${anoAtual}-01-01`;
+dataReserva.max = `${anoAtual + 1}-12-31`;
+
+dataInicioRecorrente.min = `${anoAtual}-01-01`;
+dataInicioRecorrente.max = `${anoAtual + 1}-12-31`;
 
 // RESERVA RECORRENTE
 
@@ -214,109 +238,275 @@ duracao.addEventListener(
 
 atualizarResumo();
 
+// RESERVA RECORRENTE
+
+function calcularDatasRecorrentes(diaSemana, quantidadeSemanas, dataInicioStr) {
+
+    const datas = [];
+
+    const [ano, mes, dia] = dataInicioStr.split('-').map(Number);
+    const dataBase = new Date(ano, mes - 1, dia);
+
+    const diaBase = dataBase.getDay();
+
+    let diferenca = diaSemana - diaBase;
+    if (diferenca < 0) diferenca += 7;
+
+    const primeiraData = new Date(dataBase);
+    primeiraData.setDate(dataBase.getDate() + diferenca);
+
+    for (let i = 0; i < quantidadeSemanas; i++) {
+
+        const data = new Date(primeiraData);
+        data.setDate(primeiraData.getDate() + (i * 7));
+
+        const anoStr = data.getFullYear();
+        const mesStr = String(data.getMonth() + 1).padStart(2, '0');
+        const diaStr = String(data.getDate()).padStart(2, '0');
+
+        datas.push(`${anoStr}-${mesStr}-${diaStr}`);
+
+    }
+
+    return datas;
+
+}
+
 // SALVAR RESERVA
 
-formReserva.addEventListener(
-    'submit',
-    async (e) => {
+formReserva.addEventListener('submit', async (e) => {
 
-        e.preventDefault();
+    e.preventDefault();
 
-        const inicio =
-            horarioInicio.value;
+    const modalidade =
+        atividade.value === 'Outro'
+            ? document.getElementById('atividadePersonalizada').value
+            : atividade.value;
 
-        const horas =
-            Number(duracao.value);
+    if (checkbox.checked) {
 
-        const horaFinal =
-            String(
-                Number(
-                    inicio.split(':')[0]
-                ) + horas
-            ).padStart(2, '0') + ':00';
+        const diaSemana =
+            Number(diaSemanaSelect.value);
 
-        const modalidade =
-            atividade.value === 'Outro'
-                ? document.getElementById('atividadePersonalizada').value
-                : atividade.value;
+        const quantidadeSemanas =
+            Number(quantidadeSemanasInput.value);
+
+        const horaInicio =
+            horarioInicioRecorrente.value;
+
+        const horaFim =
+            horarioFimRecorrente.value;
+
+        if (!dataInicioRecorrente.value) {
+            alert('Escolha a data de início.');
+            return;
+        }
+
+        if (!horaInicio || !horaFim) {
+            alert('Preencha o horário inicial e final.');
+            return;
+        }
+
+        if (horaFim <= horaInicio) {
+            alert('O horário final precisa ser depois do horário inicial.');
+            return;
+        }
+
+        if (!quantidadeSemanas || quantidadeSemanas < 1 || quantidadeSemanas > 16) {
+            alert('Escolha entre 1 e 16 semanas.');
+            return;
+        }
+
+        const datas =
+            calcularDatasRecorrentes(diaSemana, quantidadeSemanas, dataInicioRecorrente.value);
 
         try {
 
-            const resposta =
-                await fetch('http://localhost:3333/reservas', {
+            const idGrupoRecorrencia = crypto.randomUUID();
 
+            for (const data of datas) {
+
+                const resposta = await fetch('http://localhost:3333/reservas', {
                     method: 'POST',
-
-                    headers: {
-                        'Content-Type':
-                            'application/json'
-                    },
-
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-
-                        data_reserva:
-                            dataReserva.value,
-
-                        horario_inicio:
-                            inicio,
-
-                        horario_fim:
-                            horaFinal,
-
+                        data_reserva: data,
+                        horario_inicio: horaInicio,
+                        horario_fim: horaFim,
                         modalidade,
-
-                        tipo_reserva:
-                            'JOGO_LIVRE',
-
-                        recorrente:
-                            checkbox.checked,
-
-                        id_usuario:
-                            usuario.id_usuario
-
+                        tipo_reserva: tipoReservaSelect.value,
+                        recorrente: true,
+                        id_usuario: usuario.id_usuario,
+                        id_recorrencia: idGrupoRecorrencia
                     })
-
                 });
 
-            const resultado =
-                await resposta.json();
+                const resultado = await resposta.json();
 
-            if (resultado.sucesso) {
-
-                alert(
-                    'Reserva criada com sucesso!'
-                );
-
-                formReserva.reset();
-
-                nomeInput.value =
-                    usuario.nome;
-
-                ocupacaoSelect.value =
-                    usuario.tipo_usuario;
-
-                outraAtividade.style.display =
-                    'none';
-
-                atualizarResumo();
-
-            } else {
-
-                alert(
-                    resultado.mensagem
-                );
+                if (!resultado.sucesso) {
+                    alert(`Erro ao criar reserva de ${data}: ${resultado.mensagem}`);
+                    return;
+                }
 
             }
 
-        } catch (erro) {
+            alert(`Agendamento recorrente criado com sucesso! (${datas.length} reservas)`);
 
+            formReserva.reset();
+            nomeInput.value = usuario.nome;
+            ocupacaoSelect.value = usuario.tipo_usuario;
+            outraAtividade.style.display = 'none';
+            localStorage.removeItem(CHAVE_RASCUNHO_AGENDA);
+
+        } catch (erro) {
             console.error(erro);
+            alert('Erro ao conectar com o servidor.');
+        }
+
+        return;
+
+    }
+
+    const inicio =
+        horarioInicio.value;
+
+    const horas =
+        Number(duracao.value);
+
+    const horaFinal =
+        String(
+            Number(
+                inicio.split(':')[0]
+            ) + horas
+        ).padStart(2, '0') + ':00';
+
+    try {
+
+        const resposta =
+            await fetch('http://localhost:3333/reservas', {
+
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify({
+
+                    data_reserva:
+                        dataReserva.value,
+
+                    horario_inicio:
+                        inicio,
+
+                    horario_fim:
+                        horaFinal,
+
+                    modalidade,
+
+                    tipo_reserva:
+                        tipoReservaSelect.value,
+
+                    recorrente:
+                        false,
+
+                    id_usuario:
+                        usuario.id_usuario
+
+                })
+
+            });
+
+        const resultado =
+            await resposta.json();
+
+        if (resultado.sucesso) {
 
             alert(
-                'Erro ao conectar com o servidor.'
+                'Reserva criada com sucesso!'
+            );
+
+            formReserva.reset();
+
+            nomeInput.value =
+                usuario.nome;
+
+            ocupacaoSelect.value =
+                usuario.tipo_usuario;
+
+            outraAtividade.style.display =
+                'none';
+
+            atualizarResumo();
+
+            localStorage.removeItem(CHAVE_RASCUNHO_AGENDA);
+
+        } else {
+
+            alert(
+                resultado.mensagem
             );
 
         }
 
+    } catch (erro) {
+
+        console.error(erro);
+
+        alert(
+            'Erro ao conectar com o servidor.'
+        );
+
     }
-);
+
+});
+
+const CHAVE_RASCUNHO_AGENDA = 'rascunho_agenda';
+
+function salvarRascunho() {
+
+    const rascunho = {
+        atividade: atividade.value,
+        atividadePersonalizada: document.getElementById('atividadePersonalizada').value,
+        dataReserva: dataReserva.value,
+        horarioInicio: horarioInicio.value,
+        duracao: duracao.value
+    };
+
+    localStorage.setItem(CHAVE_RASCUNHO_AGENDA, JSON.stringify(rascunho));
+
+}
+
+function restaurarRascunho() {
+
+    const salvo = localStorage.getItem(CHAVE_RASCUNHO_AGENDA);
+
+    if (!salvo) return;
+
+    const rascunho = JSON.parse(salvo);
+
+    atividade.value = rascunho.atividade || '';
+
+    if (rascunho.atividade === 'Outro') {
+        outraAtividade.style.display = 'flex';
+        document.getElementById('atividadePersonalizada').value =
+            rascunho.atividadePersonalizada || '';
+    }
+
+    dataReserva.value = rascunho.dataReserva || '';
+    horarioInicio.value = rascunho.horarioInicio || '';
+    duracao.value = rascunho.duracao || '1';
+
+    atualizarResumo();
+
+}
+
+[atividade, dataReserva, horarioInicio, duracao].forEach((campo) => {
+    campo.addEventListener('change', salvarRascunho);
+});
+
+document.getElementById('atividadePersonalizada')
+    .addEventListener('input', salvarRascunho);
+
+restaurarRascunho();
