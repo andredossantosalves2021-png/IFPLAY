@@ -184,3 +184,28 @@ html.dark-mode .reclamacao-item p {
 html.dark-mode h1 {
     color: #38bdf8;
 }
+html.dark-mode .input-group textarea,
+html.dark-mode .input-group input[type="file"] {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+html.dark-mode .resposta-admin {
+    background: #1e293b;
+    border-left-color: #38bdf8;
+}
+
+html.dark-mode .resposta-admin strong {
+    color: #38bdf8;
+}
+
+html.dark-mode .form-resposta input {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+html.dark-mode .form-resposta input::placeholder {
+    color: #94a3b8;
+}
