@@ -103,7 +103,7 @@ function gerarCalendario(ano, mes) {
                 const tag = document.createElement('div');
                 const classeTipo = reserva.tipo === 'AULA' ? 'tag-aula'
                     : reserva.tipo === 'EVENTO' ? 'tag-evento'
-                    : 'tag-jogo';
+                        : 'tag-jogo';
                 tag.className = `reservation ${classeTipo}`;
                 tag.textContent = `${reserva.esporte} • ${reserva.horario}`;
                 celula.appendChild(tag);
@@ -144,7 +144,10 @@ function abrirDetalhes(dia, ano, mes, reservasDoDia) {
 
         reservasDoDia.forEach(reserva => {
             const item = document.createElement('div');
-            item.className = 'reservation-item';
+            const classeTipo = reserva.tipo === 'AULA' ? 'tag-aula'
+                : reserva.tipo === 'EVENTO' ? 'tag-evento'
+                    : 'tag-jogo';
+            item.className = `reservation-item ${classeTipo}`;
             item.innerHTML = `
                 <strong>${reserva.esporte}</strong> <span class="tipo-label">${reserva.tipo}</span><br>
                 ${reserva.horario}<br>
