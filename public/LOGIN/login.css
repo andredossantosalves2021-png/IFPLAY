@@ -82,3 +82,17 @@ body {
 .cordois {
     color: #800000;
 }
+.link-cadastro {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #333;
+    text-decoration: none;
+}
+.link-cadastro strong {
+    color: #022468;
+}
+.link-cadastro:hover strong {
+    text-decoration: underline;
+}
