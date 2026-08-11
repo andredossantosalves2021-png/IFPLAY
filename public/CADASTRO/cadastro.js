@@ -5,13 +5,17 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     mensagemErro.textContent = '';
 
-    const nome = document.getElementById('nome').value.trim();
     const ra = document.getElementById('ra').value.trim();
     const senha = document.getElementById('senha').value;
     const confirmarSenha = document.getElementById('confirmarSenha').value;
 
+    if (!/^\d+$/.test(ra)) {
+        mensagemErro.textContent = 'O RA deve conter apenas números.';
+        return;
+    }
+
     if (senha !== confirmarSenha) {
-        mensagemErro.textContent = 'As senhas digitadas não são iguais.';
+        mensagemErro.textContent = 'As senhas do SUAP digitadas não são iguais.';
         return;
     }
 
@@ -21,7 +25,7 @@ form.addEventListener('submit', async (e) => {
     }
 
     try {
-        // Envia só nome, RA e senha. O tipo de usuário (ALUNO)
+        // Envia só RA e senha do SUAP. O tipo de usuário (ALUNO)
         // é definido pelo servidor, não pela tela, por segurança.
         const resposta = await fetch('/cadastro', {
             method: 'POST',
@@ -29,7 +33,6 @@ form.addEventListener('submit', async (e) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                nome,
                 ra,
                 senha
             })
