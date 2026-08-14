@@ -15,8 +15,10 @@ body {
     background-position: center;
 }
 .container {
+    position: relative;
+    z-index: 1;
     width: 420px;
-    background-color: transparent;
+    background-color: #fff;   /* garante que a logo não "vaze" por trás */
     border: 2px solid rgba(255, 255, 255, .2);
     border-radius: 20px;
     color: black;
@@ -102,9 +104,19 @@ body {
 }
 .logo {
   position: absolute;
-  top: 30px;
+  top: 20px;
   left: 50%;
-  transform: translate(-50%, -30%);
+  transform: translate(-50%, 0);
+  width: 160px;      
+  max-width: 40%;
+  z-index: 0;        
+}
+
+.logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 }
 .corum {
     color: #008000;
