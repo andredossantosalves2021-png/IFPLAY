@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="/CADASTRO/cadastro.css">
+
+    <title>IFPlay - Cadastro</title>
+</head>
+<body>
+
+    <div class="logo">
+        <img src="/LOGO/1000942679.png" alt="Logo IFPlay">
+    </div>
+
+    <main class="container">
+        <form id="cadastroForm">
+
+            <h1>
+                Cadastro
+                <span class="corum">IF</span><span class="cordois">play</span>
+            </h1>
+
+            <p class="subtitulo">Cadastro de Aluno</p>
+
+            <div class="input-cadastro">
+                <input
+                    type="text"
+                    id="ra"
+                    placeholder="Digite sua matrícula (RA)"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    required
+                >
+                <i class="bx bxs-id-card"></i>
+            </div>
+
+            <div class="input-cadastro">
+                <input
+                    type="password"
+                    id="senha"
+                    placeholder="Digite sua senha do SUAP"
+                    minlength="6"
+                    required
+                >
+                <i class="bx bxs-lock-alt"></i>
+            </div>
+
+            <div class="input-cadastro">
+                <input
+                    type="password"
+                    id="confirmarSenha"
+                    placeholder="Confirme sua senha do SUAP"
+                    minlength="6"
+                    required
+                >
+                <i class="bx bxs-lock-alt"></i>
+            </div>
+
+            <p id="mensagemErro" class="mensagem-erro"></p>
+
+            <button type="submit" class="botao-cadastro">
+                <i class="fa-solid fa-user-plus"></i>
+                Criar conta
+            </button>
+
+            <a href="/index.html" class="link-voltar">
+                <i class="fa-solid fa-arrow-left"></i>
+                Voltar para o login
+            </a>
+
+        </form>
+    </main>
+
+    <script src="/CADASTRO/cadastro.js"></script>
+
+</body>
+</html> 
