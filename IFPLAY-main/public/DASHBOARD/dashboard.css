@@ -12,22 +12,25 @@ body {
     justify-content: center;
     align-items: center;
     background-color: #f3f4f6;
+    background-image:
+        radial-gradient(circle at 8% 12%, rgba(49, 157, 50, 0.10), transparent 45%),
+        radial-gradient(circle at 92% 88%, rgba(49, 157, 50, 0.08), transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(224, 34, 44, 0.05), transparent 40%);
+    background-attachment: fixed;
     min-height: 100vh;
     padding: 20px;
     transition: background 0.3s;
 }
-
 .container {
     width: 95%;
     max-width: 1600px;
-    background-color: #022468;
+    background-color: #14532d;
     border: 2px solid rgba(255, 255, 255, .1);
     border-radius: 20px;
     padding: 20px;
     display: flex;
     flex-direction: column;
 }
-   
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -71,8 +74,8 @@ body {
 }
 
 #boasVindas {
-    color: white;
-    font-size: 18px;
+    color: #cbd5e1;
+    font-size: 20px;
 }
 
 .btn-icone {
@@ -113,13 +116,16 @@ iframe {
 
 html.dark-mode body {
     background-color: #0f172a;
+    background-image:
+        radial-gradient(circle at 8% 12%, rgba(49, 157, 50, 0.12), transparent 45%),
+        radial-gradient(circle at 92% 88%, rgba(49, 157, 50, 0.10), transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(224, 34, 44, 0.06), transparent 40%);
 }
 
 html.dark-mode .container {
-    background-color: #0b2454;
+    background-color: #14532d;
     border-color: rgba(255, 255, 255, 0.1);
 }
-
 
 @media(max-width: 768px){
     .navbar { flex-direction: column; align-items: center; }
