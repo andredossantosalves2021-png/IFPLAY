@@ -5,7 +5,7 @@
 }
 
 body {
-    background: #f3f4f6;
+    background: #e8f1f2;
     font-family: Arial, sans-serif;
     transition: background 0.3s;
 }
@@ -74,7 +74,7 @@ body {
 }
 
 #resumoReserva {
-    background: #f3f4f6;
+    background: #e8f1f2;
     padding: 15px;
     border-radius: 10px;
     font-weight: bold;

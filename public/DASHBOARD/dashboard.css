@@ -11,7 +11,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f3f4f6;
+    background-color: white;
     min-height: 100vh;
     padding: 20px;
     transition: background 0.3s;
@@ -20,7 +20,7 @@ body {
 .container {
     width: 95%;
     max-width: 1600px;
-    background-color: #022468;
+    background-color: #05614b;
     border: 2px solid rgba(255, 255, 255, .1);
     border-radius: 20px;
     padding: 20px;
@@ -116,7 +116,7 @@ html.dark-mode body {
 }
 
 html.dark-mode .container {
-    background-color: #0b2454;
+    background-color: #001f18;
     border-color: rgba(255, 255, 255, 0.1);
 }
 
