@@ -258,6 +258,68 @@ app.post('/reservas', async (c) => {
 });
 
 
+app.post('/reclamacoes', async (c) => {
+
+    try {
+
+        const body = await c.req.parseBody();
+        const { descricao, id_usuario } = body;
+        const foto = body.foto;
+
+        if (!descricao || !id_usuario) {
+            return c.json({ sucesso: false, mensagem: 'Preencha a descrição.' }, 400);
+        }
+
+        let imagemUrl = null;
+
+        if (foto && foto instanceof File && foto.size > 0) {
+
+            const nomeArquivo = `${Date.now()}_${foto.name}`;
+            const buffer = await foto.arrayBuffer();
+
+            const { error: erroUpload } = await supabase
+                .storage
+                .from('reclamacoes')
+                .upload(nomeArquivo, buffer, { contentType: foto.type });
+
+            if (erroUpload) {
+                console.error(erroUpload);
+                return c.json({ sucesso: false, mensagem: 'Erro ao enviar a imagem.' }, 400);
+            }
+
+            const { data: urlData } = supabase
+                .storage
+                .from('reclamacoes')
+                .getPublicUrl(nomeArquivo);
+
+            imagemUrl = urlData.publicUrl;
+
+        }
+
+        const { data, error } = await supabase
+            .from('reclamacao')
+            .insert([{
+                descricao,
+                id_usuario,
+                status: 'PENDENTE',
+                imagem_anexo: imagemUrl
+            }])
+            .select();
+
+        if (error) {
+            console.error(error);
+            return c.json({ sucesso: false, mensagem: error.message }, 400);
+        }
+
+        return c.json({ sucesso: true, reclamacao: data[0] });
+
+    } catch (erro) {
+        console.error(erro);
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+    }
+
+});
+
 app.get('/reclamacoes', async (c) => {
 
     try {
