@@ -1,10 +1,15 @@
 const form = document.getElementById('loginForm');
+const botaoLogin = document.querySelector('.botao-login');
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const ra = document.getElementById('ra').value;
     const senha = document.getElementById('senha').value;
+
+    botaoLogin.disabled = true;
+
+    botaoLogin.innerHTML = 'Entrando...';
 
     try {
         const resposta = await fetch('/login', {
@@ -31,10 +36,24 @@ form.addEventListener('submit', async (e) => {
 
         } else {
             alert(dados.mensagem);
+
+            botaoLogin.disabled = false;
+
+            botaoLogin.innerHTML = `
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Entrar
+            `;
         }
 
     } catch (erro) {
         console.error(erro);
         alert('Erro ao conectar com o servidor.');
+
+        botaoLogin.disabled = false;
+
+        botaoLogin.innerHTML = `
+            <i class="fa-solid fa-right-to-bracket"></i>
+            Entrar
+        `;
     }
 });
