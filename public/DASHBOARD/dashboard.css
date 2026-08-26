@@ -27,7 +27,7 @@ body {
     display: flex;
     flex-direction: column;
 }
-   
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -99,7 +99,7 @@ body {
     background: white;
     border-radius: 14px;
     padding: 5px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
 }
 
@@ -109,6 +109,7 @@ iframe {
     border: none;
     border-radius: 10px;
 }
+
 
 
 html.dark-mode body {
@@ -121,6 +122,170 @@ html.dark-mode .container {
 }
 
 
-@media(max-width: 768px){
-    .navbar { flex-direction: column; align-items: center; }
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(0, 0, 0, 0.55);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 20px;
+
+    z-index: 1000;
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease;
+}
+
+.modal-overlay.ativo {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-sair {
+    width: 100%;
+    max-width: 420px;
+
+    background-color: white;
+
+    border-radius: 18px;
+
+    padding: 30px;
+
+    text-align: center;
+
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+
+    transform: scale(0.95);
+
+    transition:
+        transform 0.2s ease,
+        background-color 0.3s;
+}
+
+.modal-overlay.ativo .modal-sair {
+    transform: scale(1);
+}
+
+.modal-icone {
+    width: 60px;
+    height: 60px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background-color: #fee2e2;
+    color: #dc2626;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 24px;
+}
+
+.modal-sair h2 {
+    margin-bottom: 8px;
+
+    color: #111827;
+
+    font-size: 24px;
+}
+
+.modal-sair p {
+    margin-bottom: 25px;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+
+.modal-acoes {
+    display: flex;
+    justify-content: center;
+
+    gap: 12px;
+}
+
+.btn-modal {
+    flex: 1;
+
+    padding: 12px 20px;
+
+    border: none;
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    transition: 0.2s;
+}
+
+.btn-cancelar {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.btn-cancelar:hover {
+    background-color: #d1d5db;
+}
+
+.btn-confirmar {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-confirmar:hover {
+    background-color: #b91c1c;
+}
+
+
+
+html.dark-mode .modal-sair {
+    background-color: #0f172a;
+}
+
+html.dark-mode .modal-sair h2 {
+    color: #f8fafc;
+}
+
+html.dark-mode .modal-sair p {
+    color: #94a3b8;
+}
+
+html.dark-mode .btn-cancelar {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+html.dark-mode .btn-cancelar:hover {
+    background-color: #475569;
+}
+
+
+
+@media(max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .modal-acoes {
+        flex-direction: column;
+    }
 }

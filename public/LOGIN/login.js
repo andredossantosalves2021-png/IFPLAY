@@ -8,7 +8,6 @@ form.addEventListener('submit', async (e) => {
     const ra = document.getElementById('ra').value;
     const senha = document.getElementById('senha').value;
 
-    // Limpa mensagens de tentativas anteriores
     mensagemLogin.textContent = '';
 
     botaoLogin.disabled = true;
