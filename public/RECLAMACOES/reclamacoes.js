@@ -30,204 +30,530 @@ const nomeArquivo =
 const btnRemoverFoto =
     document.getElementById('btnRemoverFoto');
 
-const CHAVE_RASCUNHO = 'rascunho_reclamacao';
+const notificacao =
+    document.getElementById('notificacao');
+
+const CHAVE_RASCUNHO =
+    'rascunho_reclamacao';
+
+let tempoNotificacao;
 
 const rascunhoSalvo =
     localStorage.getItem(CHAVE_RASCUNHO);
 
 if (rascunhoSalvo) {
-    descricaoInput.value = rascunhoSalvo;
+    descricaoInput.value =
+        rascunhoSalvo;
 }
 
-descricaoInput.addEventListener('input', () => {
-    localStorage.setItem(CHAVE_RASCUNHO, descricaoInput.value);
-});
-
-
-fotoInput.addEventListener('change', () => {
-
-    if (fotoInput.files[0]) {
-        nomeArquivo.textContent = fotoInput.files[0].name;
-        previewFoto.style.display = 'flex';
-    } else {
-        previewFoto.style.display = 'none';
+descricaoInput.addEventListener(
+    'input',
+    () => {
+        localStorage.setItem(
+            CHAVE_RASCUNHO,
+            descricaoInput.value
+        );
     }
+);
 
-});
+fotoInput.addEventListener(
+    'change',
+    () => {
 
-btnRemoverFoto.addEventListener('click', () => {
-    fotoInput.value = '';
-    previewFoto.style.display = 'none';
-});
+        if (fotoInput.files[0]) {
+
+            nomeArquivo.textContent =
+                fotoInput.files[0].name;
+
+            previewFoto.style.display =
+                'flex';
+
+        } else {
+
+            previewFoto.style.display =
+                'none';
+        }
+    }
+);
+
+btnRemoverFoto.addEventListener(
+    'click',
+    () => {
+
+        fotoInput.value = '';
+
+        previewFoto.style.display =
+            'none';
+    }
+);
+
+function mostrarNotificacao(
+    mensagem,
+    tipo
+) {
+
+    clearTimeout(
+        tempoNotificacao
+    );
+
+    notificacao.textContent =
+        mensagem;
+
+    notificacao.className =
+        'notificacao ' + tipo;
+
+    requestAnimationFrame(
+        () => {
+
+            notificacao.classList.add(
+                'ativa'
+            );
+        }
+    );
+
+    tempoNotificacao =
+        setTimeout(
+            () => {
+
+                notificacao.classList.remove(
+                    'ativa'
+                );
+
+            },
+            4000
+        );
+}
+
 
 async function carregarReclamacoes() {
 
     try {
 
         const resposta =
-            await fetch('http://localhost:3333/reclamacoes');
+            await fetch(
+                'http://localhost:3333/reclamacoes'
+            );
 
         const resultado =
             await resposta.json();
 
         if (!resultado.sucesso) {
-            listaReclamacoes.innerHTML = `<p>${resultado.mensagem}</p>`;
+
+            listaReclamacoes.textContent =
+                resultado.mensagem;
+
             return;
         }
 
-        renderizarReclamacoes(resultado.reclamacoes);
+        renderizarReclamacoes(
+            resultado.reclamacoes
+        );
 
     } catch (erro) {
-        console.error(erro);
-        listaReclamacoes.innerHTML = '<p>Erro ao carregar reclamações.</p>';
-    }
 
+        console.error(erro);
+
+        listaReclamacoes.innerHTML =
+            '<p>Erro ao carregar reclamações.</p>';
+    }
 }
 
-function renderizarReclamacoes(reclamacoes) {
+
+function renderizarReclamacoes(
+    reclamacoes
+) {
 
     listaReclamacoes.innerHTML = '';
 
     if (reclamacoes.length === 0) {
-        listaReclamacoes.innerHTML = '<p>Nenhuma reclamação registrada.</p>';
+
+        listaReclamacoes.innerHTML =
+            '<p>Nenhuma reclamação registrada.</p>';
+
         return;
     }
 
-    reclamacoes.forEach((reclamacao) => {
+    reclamacoes.forEach(
+        (reclamacao) => {
 
-        const classeBadge =
-            reclamacao.status === 'PENDENTE' ? 'pendente' :
-            reclamacao.status === 'ANALISADA' ? 'analisada' : 'resolvida';
+            const classeBadge =
+                reclamacao.status === 'PENDENTE'
+                    ? 'pendente'
+                    : reclamacao.status === 'ANALISADA'
+                        ? 'analisada'
+                        : 'resolvida';
 
-        const classeBorda =
-            reclamacao.status === 'PENDENTE' ? '' :
-            reclamacao.status === 'ANALISADA' ? 'borda-analisada' : 'borda-resolvida';
+            const classeBorda =
+                reclamacao.status === 'PENDENTE'
+                    ? ''
+                    : reclamacao.status === 'ANALISADA'
+                        ? 'borda-analisada'
+                        : 'borda-resolvida';
 
-        const nomeUsuario =
-            reclamacao.usuario?.nome ?? 'Usuário';
+            const nomeUsuario =
+                reclamacao.usuario?.nome ??
+                'Usuário';
 
-        const item = document.createElement('div');
-        item.className = `reclamacao-item ${classeBorda}`;
+            const item =
+                document.createElement(
+                    'div'
+                );
 
-        item.innerHTML = `
-            <span class="badge ${classeBadge}">${reclamacao.status}</span>
-            <p><strong>${nomeUsuario}</strong> - ${new Date(reclamacao.data_envio).toLocaleDateString('pt-BR')}</p>
-            <p>${reclamacao.descricao}</p>
-            ${reclamacao.imagem_anexo ? `<img src="${reclamacao.imagem_anexo}" alt="Anexo da reclamação">` : ''}
-        `;
+            item.className =
+                'reclamacao-item ' +
+                classeBorda;
 
-        if (reclamacao.resposta) {
+            const badge =
+                document.createElement(
+                    'span'
+                );
 
-            const respostaDiv = document.createElement('div');
-            respostaDiv.className = 'resposta-admin';
-            respostaDiv.innerHTML = `<strong>Resposta da administração:</strong><p>${reclamacao.resposta}</p>`;
-            item.appendChild(respostaDiv);
+            badge.className =
+                'badge ' +
+                classeBadge;
 
-        } else if (usuario.tipo_usuario === 'ADMINISTRADOR') {
+            badge.textContent =
+                reclamacao.status;
 
-            const formResposta = document.createElement('div');
-            formResposta.className = 'form-resposta';
+            const dadosUsuario =
+                document.createElement(
+                    'p'
+                );
 
-            const inputResposta = document.createElement('input');
-            inputResposta.type = 'text';
-            inputResposta.placeholder = 'Escreva uma resposta...';
+            const nomeStrong =
+                document.createElement(
+                    'strong'
+                );
 
-            const btnResponder = document.createElement('button');
-            btnResponder.textContent = 'Responder';
-            btnResponder.addEventListener('click', () =>
-                responder(reclamacao.id_reclamacao, inputResposta.value));
+            nomeStrong.textContent =
+                nomeUsuario;
 
-            formResposta.appendChild(inputResposta);
-            formResposta.appendChild(btnResponder);
-            item.appendChild(formResposta);
+            dadosUsuario.appendChild(
+                nomeStrong
+            );
 
+            const dataFormatada =
+                new Date(
+                    reclamacao.data_envio
+                ).toLocaleDateString(
+                    'pt-BR'
+                );
+
+            dadosUsuario.appendChild(
+                document.createTextNode(
+                    ' - ' +
+                    dataFormatada
+                )
+            );
+
+            const descricao =
+                document.createElement(
+                    'p'
+                );
+
+            descricao.textContent =
+                reclamacao.descricao;
+
+            item.appendChild(
+                badge
+            );
+
+            item.appendChild(
+                dadosUsuario
+            );
+
+            item.appendChild(
+                descricao
+            );
+
+            if (
+                reclamacao.imagem_anexo
+            ) {
+
+                const imagem =
+                    document.createElement(
+                        'img'
+                    );
+
+                imagem.src =
+                    reclamacao.imagem_anexo;
+
+                imagem.alt =
+                    'Anexo da reclamação';
+
+                item.appendChild(
+                    imagem
+                );
+            }
+
+            if (
+                reclamacao.resposta
+            ) {
+
+                const respostaDiv =
+                    document.createElement(
+                        'div'
+                    );
+
+                respostaDiv.className =
+                    'resposta-admin';
+
+                const tituloResposta =
+                    document.createElement(
+                        'strong'
+                    );
+
+                tituloResposta.textContent =
+                    'Resposta da administração:';
+
+                const textoResposta =
+                    document.createElement(
+                        'p'
+                    );
+
+                textoResposta.textContent =
+                    reclamacao.resposta;
+
+                respostaDiv.appendChild(
+                    tituloResposta
+                );
+
+                respostaDiv.appendChild(
+                    textoResposta
+                );
+
+                item.appendChild(
+                    respostaDiv
+                );
+
+            } else if (
+                usuario.tipo_usuario ===
+                'ADMINISTRADOR'
+            ) {
+
+                const formResposta =
+                    document.createElement(
+                        'div'
+                    );
+
+                formResposta.className =
+                    'form-resposta';
+
+                const inputResposta =
+                    document.createElement(
+                        'input'
+                    );
+
+                inputResposta.type =
+                    'text';
+
+                inputResposta.placeholder =
+                    'Escreva uma resposta...';
+
+                const btnResponder =
+                    document.createElement(
+                        'button'
+                    );
+
+                btnResponder.textContent =
+                    'Responder';
+
+                btnResponder.addEventListener(
+                    'click',
+                    () => {
+
+                        responder(
+                            reclamacao.id_reclamacao,
+                            inputResposta.value
+                        );
+                    }
+                );
+
+                formResposta.appendChild(
+                    inputResposta
+                );
+
+                formResposta.appendChild(
+                    btnResponder
+                );
+
+                item.appendChild(
+                    formResposta
+                );
+            }
+
+            listaReclamacoes.appendChild(
+                item
+            );
         }
-
-        listaReclamacoes.appendChild(item);
-
-    });
-
+    );
 }
 
-async function responder(idReclamacao, textoResposta) {
+
+async function responder(
+    idReclamacao,
+    textoResposta
+) {
 
     if (!textoResposta.trim()) {
-        alert('Escreva uma resposta antes de enviar.');
+
+        mostrarNotificacao(
+            'Escreva uma resposta antes de enviar.',
+            'aviso'
+        );
+
         return;
     }
 
     try {
 
         const resposta =
-            await fetch(`http://localhost:3333/reclamacoes/${idReclamacao}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    resposta: textoResposta,
-                    id_usuario_admin: usuario.id_usuario
-                })
-            });
+            await fetch(
+                'http://localhost:3333/reclamacoes/' +
+                idReclamacao,
+                {
+                    method: 'PATCH',
 
-        const resultado = await resposta.json();
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        resposta:
+                            textoResposta,
+
+                        id_usuario_admin:
+                            usuario.id_usuario
+                    })
+                }
+            );
+
+        const resultado =
+            await resposta.json();
 
         if (!resultado.sucesso) {
-            alert(resultado.mensagem);
+
+            mostrarNotificacao(
+                resultado.mensagem,
+                'erro'
+            );
+
             return;
         }
+
+        mostrarNotificacao(
+            'Resposta enviada com sucesso!',
+            'sucesso'
+        );
 
         carregarReclamacoes();
 
     } catch (erro) {
-        console.error(erro);
-        alert('Erro ao enviar resposta.');
-    }
 
+        console.error(erro);
+
+        mostrarNotificacao(
+            'Erro ao enviar resposta.',
+            'erro'
+        );
+    }
 }
 
-formReclamacao.addEventListener('submit', async (e) => {
 
-    e.preventDefault();
+formReclamacao.addEventListener(
+    'submit',
+    async (e) => {
 
-    if (!descricaoInput.value.trim()) {
-        alert('Descreva sua reclamação antes de enviar.');
-        return;
-    }
+        e.preventDefault();
 
-    const dadosForm = new FormData();
-    dadosForm.append('descricao', descricaoInput.value);
-    dadosForm.append('id_usuario', usuario.id_usuario);
+        if (
+            !descricaoInput.value.trim()
+        ) {
 
-    if (fotoInput.files[0]) {
-        dadosForm.append('foto', fotoInput.files[0]);
-    }
+            mostrarNotificacao(
+                'Descreva sua reclamação antes de enviar.',
+                'aviso'
+            );
 
-    try {
-
-        const resposta =
-            await fetch('http://localhost:3333/reclamacoes', {
-                method: 'POST',
-                body: dadosForm
-            });
-
-        const resultado = await resposta.json();
-
-        if (!resultado.sucesso) {
-            alert(resultado.mensagem);
             return;
         }
 
-        alert('Reclamação enviada com sucesso!');
-        localStorage.removeItem(CHAVE_RASCUNHO);
-        formReclamacao.reset();
-        previewFoto.style.display = 'none';
-        carregarReclamacoes();
+        const dadosForm =
+            new FormData();
 
-    } catch (erro) {
-        console.error(erro);
-        alert('Erro ao enviar reclamação.');
+        dadosForm.append(
+            'descricao',
+            descricaoInput.value
+        );
+
+        dadosForm.append(
+            'id_usuario',
+            usuario.id_usuario
+        );
+
+        if (
+            fotoInput.files[0]
+        ) {
+
+            dadosForm.append(
+                'foto',
+                fotoInput.files[0]
+            );
+        }
+
+        try {
+
+            const resposta =
+                await fetch(
+                    'http://localhost:3333/reclamacoes',
+                    {
+                        method: 'POST',
+                        body: dadosForm
+                    }
+                );
+
+            const resultado =
+                await resposta.json();
+
+            if (
+                !resultado.sucesso
+            ) {
+
+                mostrarNotificacao(
+                    resultado.mensagem,
+                    'erro'
+                );
+
+                return;
+            }
+
+            mostrarNotificacao(
+                'Reclamação enviada com sucesso!',
+                'sucesso'
+            );
+
+            localStorage.removeItem(
+                CHAVE_RASCUNHO
+            );
+
+            formReclamacao.reset();
+
+            previewFoto.style.display =
+                'none';
+
+            carregarReclamacoes();
+
+        } catch (erro) {
+
+            console.error(erro);
+
+            mostrarNotificacao(
+                'Erro ao enviar reclamação.',
+                'erro'
+            );
+        }
     }
-
-});
-
+);
 
 carregarReclamacoes();
