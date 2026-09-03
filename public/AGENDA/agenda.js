@@ -8,72 +8,120 @@ if (!usuario) {
         '../LOGIN/index.html';
 }
 
-// MODO ESCURO
-
-if (localStorage.getItem('tema') === 'true') {
-    document.documentElement.classList.add('dark-mode');
+if (
+    localStorage.getItem('tema') ===
+    'true'
+) {
+    document.documentElement.classList.add(
+        'dark-mode'
+    );
 }
-
-// ELEMENTOS DA PÁGINA
 
 const atividade =
     document.getElementById('atividade');
 
+const atividadePersonalizada =
+    document.getElementById(
+        'atividadePersonalizada'
+    );
+
 const outraAtividade =
-    document.getElementById('outraAtividade');
+    document.getElementById(
+        'outraAtividade'
+    );
 
 const dataReserva =
-    document.getElementById('dataReserva');
+    document.getElementById(
+        'dataReserva'
+    );
 
 const nomeInput =
     document.getElementById('nome');
 
 const ocupacaoSelect =
-    document.getElementById('ocupacao');
+    document.getElementById(
+        'ocupacao'
+    );
 
 const checkbox =
-    document.getElementById('agendamentoRecorrente');
+    document.getElementById(
+        'agendamentoRecorrente'
+    );
 
 const agendamentoUnico =
-    document.getElementById('agendamentoUnico');
+    document.getElementById(
+        'agendamentoUnico'
+    );
 
 const camposRecorrentes =
-    document.getElementById('camposRecorrentes');
+    document.getElementById(
+        'camposRecorrentes'
+    );
 
 const botao =
-    document.querySelector('.submit-btn');
+    document.querySelector(
+        '.submit-btn'
+    );
 
 const horarioInicio =
-    document.getElementById('horarioInicio');
+    document.getElementById(
+        'horarioInicio'
+    );
 
 const duracao =
-    document.getElementById('duracao');
+    document.getElementById(
+        'duracao'
+    );
 
 const resumoReserva =
-    document.getElementById('resumoReserva');
+    document.getElementById(
+        'resumoReserva'
+    );
 
 const formReserva =
-    document.getElementById('formReserva');
+    document.getElementById(
+        'formReserva'
+    );
 
 const diaSemanaSelect =
-    document.getElementById('diaSemana');
+    document.getElementById(
+        'diaSemana'
+    );
 
 const quantidadeSemanasInput =
-    document.getElementById('quantidadeSemanas');
+    document.getElementById(
+        'quantidadeSemanas'
+    );
 
 const horarioInicioRecorrente =
-    document.getElementById('horarioInicioRecorrente');
+    document.getElementById(
+        'horarioInicioRecorrente'
+    );
 
 const horarioFimRecorrente =
-    document.getElementById('horarioFimRecorrente');
+    document.getElementById(
+        'horarioFimRecorrente'
+    );
 
 const tipoReservaSelect =
-    document.getElementById('tipoReserva');
+    document.getElementById(
+        'tipoReserva'
+    );
 
 const dataInicioRecorrente =
-    document.getElementById('dataInicioRecorrente');
+    document.getElementById(
+        'dataInicioRecorrente'
+    );
 
-// DADOS DO USUÁRIO
+const notificacaoAgenda =
+    document.getElementById(
+        'notificacaoAgenda'
+    );
+
+const CHAVE_RASCUNHO_AGENDA =
+    'rascunho_agenda';
+
+let tempoNotificacao;
 
 nomeInput.value =
     usuario.nome;
@@ -81,14 +129,114 @@ nomeInput.value =
 ocupacaoSelect.value =
     usuario.tipo_usuario;
 
-// CAMPO "OUTRO"
+
+function mostrarNotificacao(
+    mensagem,
+    tipo
+) {
+
+    clearTimeout(
+        tempoNotificacao
+    );
+
+    notificacaoAgenda.textContent =
+        mensagem;
+
+    notificacaoAgenda.className =
+        'notificacao ' + tipo;
+
+    requestAnimationFrame(
+        () => {
+
+            notificacaoAgenda.classList.add(
+                'ativa'
+            );
+        }
+    );
+
+    tempoNotificacao =
+        setTimeout(
+            () => {
+
+                notificacaoAgenda.classList.remove(
+                    'ativa'
+                );
+
+            },
+            4000
+        );
+}
+
+
+function obterDataHoje() {
+
+    const agora =
+        new Date();
+
+    const ano =
+        agora.getFullYear();
+
+    const mes =
+        String(
+            agora.getMonth() + 1
+        ).padStart(2, '0');
+
+    const dia =
+        String(
+            agora.getDate()
+        ).padStart(2, '0');
+
+    return (
+        ano +
+        '-' +
+        mes +
+        '-' +
+        dia
+    );
+}
+
+const dataHoje =
+    obterDataHoje();
+
+const anoAtual =
+    new Date().getFullYear();
+
+const dataMaxima =
+    String(anoAtual + 1) +
+    '-12-31';
+
+dataReserva.min =
+    dataHoje;
+
+dataReserva.max =
+    dataMaxima;
+
+dataInicioRecorrente.min =
+    dataHoje;
+
+dataInicioRecorrente.max =
+    dataMaxima;
+
+function dataEhPassada(
+    data
+) {
+
+    if (!data) {
+        return false;
+    }
+
+    return data < dataHoje;
+}
 
 
 atividade.addEventListener(
     'change',
     () => {
 
-        if (atividade.value === 'Outro') {
+        if (
+            atividade.value ===
+            'Outro'
+        ) {
 
             outraAtividade.style.display =
                 'flex';
@@ -98,75 +246,55 @@ atividade.addEventListener(
             outraAtividade.style.display =
                 'none';
 
+            atividadePersonalizada.value =
+                '';
         }
-
     }
 );
 
-// LIMITE DE DATA
-
-const hoje =
-    new Date();
-
-const anoAtual =
-    hoje.getFullYear();
-
-dataReserva.min =
-    `${anoAtual}-01-01`;
-
-dataReserva.max =
-    `${anoAtual + 1}-12-31`;
-
-dataReserva.min = `${anoAtual}-01-01`;
-dataReserva.max = `${anoAtual + 1}-12-31`;
-
-dataInicioRecorrente.min = `${anoAtual}-01-01`;
-dataInicioRecorrente.max = `${anoAtual + 1}-12-31`;
-
-// RESERVA RECORRENTE
-
-if (usuario.tipo_usuario === 'ALUNO') {
+if (
+    usuario.tipo_usuario ===
+    'ALUNO'
+) {
 
     checkbox.parentElement.style.display =
         'none';
 
     camposRecorrentes.style.display =
         'none';
+}
 
+function atualizarModoReserva() {
+
+    if (checkbox.checked) {
+
+        agendamentoUnico.style.display =
+            'none';
+
+        camposRecorrentes.style.display =
+            'block';
+
+        botao.textContent =
+            'Criar Agendamento Recorrente';
+
+    } else {
+
+        agendamentoUnico.style.display =
+            'block';
+
+        camposRecorrentes.style.display =
+            'none';
+
+        botao.textContent =
+            'Confirmar Reserva';
+    }
 }
 
 checkbox.addEventListener(
     'change',
-    () => {
-
-        if (checkbox.checked) {
-
-            agendamentoUnico.style.display =
-                'none';
-
-            camposRecorrentes.style.display =
-                'block';
-
-            botao.textContent =
-                'Criar Agendamento Recorrente';
-
-        } else {
-
-            agendamentoUnico.style.display =
-                'block';
-
-            camposRecorrentes.style.display =
-                'none';
-
-            botao.textContent =
-                'Confirmar Reserva';
-
-        }
-
-    }
+    atualizarModoReserva
 );
 
-// HORÁRIOS
 
 for (
     let hora = 7;
@@ -175,12 +303,16 @@ for (
 ) {
 
     const horario =
-        String(hora)
-            .padStart(2, '0') +
+        String(hora).padStart(
+            2,
+            '0'
+        ) +
         ':00';
 
     const option =
-        document.createElement('option');
+        document.createElement(
+            'option'
+        );
 
     option.value =
         horario;
@@ -188,42 +320,95 @@ for (
     option.textContent =
         horario;
 
-    horarioInicio.appendChild(option);
-
+    horarioInicio.appendChild(
+        option
+    );
 }
 
-// RESUMO DA RESERVA
+function converterHorarioEmMinutos(
+    horario
+) {
+
+    if (!horario) {
+        return null;
+    }
+
+    const partes =
+        horario.split(':');
+
+    const horas =
+        Number(partes[0]);
+
+    const minutos =
+        Number(partes[1]);
+
+    return (
+        horas * 60 +
+        minutos
+    );
+}
+
+function converterMinutosEmHorario(
+    totalMinutos
+) {
+
+    const horas =
+        Math.floor(
+            totalMinutos / 60
+        );
+
+    const minutos =
+        totalMinutos % 60;
+
+    return (
+        String(horas).padStart(
+            2,
+            '0'
+        ) +
+        ':' +
+        String(minutos).padStart(
+            2,
+            '0'
+        )
+    );
+}
 
 function atualizarResumo() {
 
     const inicio =
         horarioInicio.value;
 
-    const horas =
-        Number(duracao.value);
+    if (!inicio) {
 
-    const horaInicial =
-        Number(
-            inicio.split(':')[0]
-        );
+        resumoReserva.textContent =
+            'Selecione um horário.';
 
-    let horaFinal =
-        horaInicial + horas;
-
-    if (horaFinal > 23) {
-
-        horaFinal = 23;
-
+        return;
     }
 
+    const horas =
+        Number(
+            duracao.value
+        );
+
+    const inicioMinutos =
+        converterHorarioEmMinutos(
+            inicio
+        );
+
+    const finalMinutos =
+        inicioMinutos +
+        horas * 60;
+
     const final =
-        String(horaFinal)
-            .padStart(2, '0') +
-        ':00';
+        converterMinutosEmHorario(
+            finalMinutos
+        );
 
     resumoReserva.textContent =
-        `${inicio} às ${final}`;
-
+        inicio +
+        ' às ' +
+        final;
 }
 
 horarioInicio.addEventListener(
@@ -238,275 +423,775 @@ duracao.addEventListener(
 
 atualizarResumo();
 
-// RESERVA RECORRENTE
 
-function calcularDatasRecorrentes(diaSemana, quantidadeSemanas, dataInicioStr) {
+function calcularDatasRecorrentes(
+    diaSemana,
+    quantidadeSemanas,
+    dataInicioStr
+) {
 
     const datas = [];
 
-    const [ano, mes, dia] = dataInicioStr.split('-').map(Number);
-    const dataBase = new Date(ano, mes - 1, dia);
+    const partes =
+        dataInicioStr
+            .split('-')
+            .map(Number);
 
-    const diaBase = dataBase.getDay();
+    const ano =
+        partes[0];
 
-    let diferenca = diaSemana - diaBase;
-    if (diferenca < 0) diferenca += 7;
+    const mes =
+        partes[1];
 
-    const primeiraData = new Date(dataBase);
-    primeiraData.setDate(dataBase.getDate() + diferenca);
+    const dia =
+        partes[2];
 
-    for (let i = 0; i < quantidadeSemanas; i++) {
+    const dataBase =
+        new Date(
+            ano,
+            mes - 1,
+            dia
+        );
 
-        const data = new Date(primeiraData);
-        data.setDate(primeiraData.getDate() + (i * 7));
+    const diaBase =
+        dataBase.getDay();
 
-        const anoStr = data.getFullYear();
-        const mesStr = String(data.getMonth() + 1).padStart(2, '0');
-        const diaStr = String(data.getDate()).padStart(2, '0');
+    let diferenca =
+        diaSemana -
+        diaBase;
 
-        datas.push(`${anoStr}-${mesStr}-${diaStr}`);
+    if (
+        diferenca < 0
+    ) {
+        diferenca += 7;
+    }
 
+    const primeiraData =
+        new Date(
+            dataBase
+        );
+
+    primeiraData.setDate(
+        dataBase.getDate() +
+        diferenca
+    );
+
+    for (
+        let i = 0;
+        i < quantidadeSemanas;
+        i++
+    ) {
+
+        const data =
+            new Date(
+                primeiraData
+            );
+
+        data.setDate(
+            primeiraData.getDate() +
+            i * 7
+        );
+
+        const anoStr =
+            data.getFullYear();
+
+        const mesStr =
+            String(
+                data.getMonth() + 1
+            ).padStart(
+                2,
+                '0'
+            );
+
+        const diaStr =
+            String(
+                data.getDate()
+            ).padStart(
+                2,
+                '0'
+            );
+
+        datas.push(
+            anoStr +
+            '-' +
+            mesStr +
+            '-' +
+            diaStr
+        );
     }
 
     return datas;
-
 }
 
-// SALVAR RESERVA
 
-formReserva.addEventListener('submit', async (e) => {
+function obterModalidade() {
 
-    e.preventDefault();
+    if (
+        !atividade.value
+    ) {
 
-    const modalidade =
-        atividade.value === 'Outro'
-            ? document.getElementById('atividadePersonalizada').value
-            : atividade.value;
+        mostrarNotificacao(
+            'Selecione um esporte ou atividade.',
+            'aviso'
+        );
 
-    if (checkbox.checked) {
+        return null;
+    }
 
-        const diaSemana =
-            Number(diaSemanaSelect.value);
+    if (
+        atividade.value ===
+        'Outro'
+    ) {
 
-        const quantidadeSemanas =
-            Number(quantidadeSemanasInput.value);
+        const personalizada =
+            atividadePersonalizada
+                .value
+                .trim();
 
-        const horaInicio =
-            horarioInicioRecorrente.value;
+        if (
+            !personalizada
+        ) {
 
-        const horaFim =
-            horarioFimRecorrente.value;
+            mostrarNotificacao(
+                'Digite qual atividade será realizada.',
+                'aviso'
+            );
 
-        if (!dataInicioRecorrente.value) {
-            alert('Escolha a data de início.');
-            return;
+            return null;
         }
 
-        if (!horaInicio || !horaFim) {
-            alert('Preencha o horário inicial e final.');
-            return;
-        }
+        return personalizada;
+    }
 
-        if (horaFim <= horaInicio) {
-            alert('O horário final precisa ser depois do horário inicial.');
-            return;
-        }
+    return atividade.value;
+}
 
-        if (!quantidadeSemanas || quantidadeSemanas < 1 || quantidadeSemanas > 16) {
-            alert('Escolha entre 1 e 16 semanas.');
-            return;
-        }
 
-        const datas =
-            calcularDatasRecorrentes(diaSemana, quantidadeSemanas, dataInicioRecorrente.value);
+function validarReservaRecorrente() {
 
-        try {
+    if (
+        !dataInicioRecorrente.value
+    ) {
 
-            const idGrupoRecorrencia = crypto.randomUUID();
+        mostrarNotificacao(
+            'Escolha a data de início.',
+            'aviso'
+        );
 
-            for (const data of datas) {
+        return false;
+    }
 
-                const resposta = await fetch('http://localhost:3333/reservas', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        data_reserva: data,
-                        horario_inicio: horaInicio,
-                        horario_fim: horaFim,
-                        modalidade,
-                        tipo_reserva: tipoReservaSelect.value,
-                        recorrente: true,
-                        id_usuario: usuario.id_usuario,
-                        id_recorrencia: idGrupoRecorrencia
-                    })
-                });
+    if (
+        dataEhPassada(
+            dataInicioRecorrente.value
+        )
+    ) {
 
-                const resultado = await resposta.json();
+        mostrarNotificacao(
+            'Não é possível criar uma reserva em uma data passada.',
+            'aviso'
+        );
 
-                if (!resultado.sucesso) {
-                    alert(`Erro ao criar reserva de ${data}: ${resultado.mensagem}`);
-                    return;
-                }
+        return false;
+    }
 
-            }
+    const horaInicio =
+        horarioInicioRecorrente.value;
 
-            alert(`Agendamento recorrente criado com sucesso! (${datas.length} reservas)`);
+    const horaFim =
+        horarioFimRecorrente.value;
 
-            formReserva.reset();
-            nomeInput.value = usuario.nome;
-            ocupacaoSelect.value = usuario.tipo_usuario;
-            outraAtividade.style.display = 'none';
-            localStorage.removeItem(CHAVE_RASCUNHO_AGENDA);
+    if (
+        !horaInicio ||
+        !horaFim
+    ) {
 
-        } catch (erro) {
-            console.error(erro);
-            alert('Erro ao conectar com o servidor.');
-        }
+        mostrarNotificacao(
+            'Preencha o horário inicial e final.',
+            'aviso'
+        );
 
-        return;
+        return false;
+    }
 
+    const inicioMinutos =
+        converterHorarioEmMinutos(
+            horaInicio
+        );
+
+    const fimMinutos =
+        converterHorarioEmMinutos(
+            horaFim
+        );
+
+    const limiteInicio =
+        7 * 60;
+
+    const limiteFim =
+        21 * 60;
+
+    if (
+        inicioMinutos <
+        limiteInicio
+    ) {
+
+        mostrarNotificacao(
+            'O horário inicial deve ser a partir das 07:00.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    if (
+        fimMinutos >
+        limiteFim
+    ) {
+
+        mostrarNotificacao(
+            'O horário final não pode ultrapassar 21:00.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    if (
+        fimMinutos <=
+        inicioMinutos
+    ) {
+
+        mostrarNotificacao(
+            'O horário final precisa ser depois do horário inicial.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    const duracaoMinutos =
+        fimMinutos -
+        inicioMinutos;
+
+    if (
+        duracaoMinutos >
+        4 * 60
+    ) {
+
+        mostrarNotificacao(
+            'A reserva pode durar no máximo 4 horas.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    const quantidadeSemanas =
+        Number(
+            quantidadeSemanasInput.value
+        );
+
+    if (
+        !quantidadeSemanas ||
+        quantidadeSemanas < 1 ||
+        quantidadeSemanas > 16
+    ) {
+
+        mostrarNotificacao(
+            'Escolha entre 1 e 16 semanas.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+function validarReservaUnica() {
+
+    if (
+        !dataReserva.value
+    ) {
+
+        mostrarNotificacao(
+            'Escolha a data da reserva.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    if (
+        dataEhPassada(
+            dataReserva.value
+        )
+    ) {
+
+        mostrarNotificacao(
+            'Não é possível criar uma reserva em uma data passada.',
+            'aviso'
+        );
+
+        return false;
     }
 
     const inicio =
         horarioInicio.value;
 
-    const horas =
-        Number(duracao.value);
+    if (!inicio) {
 
-    const horaFinal =
-        String(
-            Number(
-                inicio.split(':')[0]
-            ) + horas
-        ).padStart(2, '0') + ':00';
-
-    try {
-
-        const resposta =
-            await fetch('http://localhost:3333/reservas', {
-
-                method: 'POST',
-
-                headers: {
-                    'Content-Type':
-                        'application/json'
-                },
-
-                body: JSON.stringify({
-
-                    data_reserva:
-                        dataReserva.value,
-
-                    horario_inicio:
-                        inicio,
-
-                    horario_fim:
-                        horaFinal,
-
-                    modalidade,
-
-                    tipo_reserva:
-                        tipoReservaSelect.value,
-
-                    recorrente:
-                        false,
-
-                    id_usuario:
-                        usuario.id_usuario
-
-                })
-
-            });
-
-        const resultado =
-            await resposta.json();
-
-        if (resultado.sucesso) {
-
-            alert(
-                'Reserva criada com sucesso!'
-            );
-
-            formReserva.reset();
-
-            nomeInput.value =
-                usuario.nome;
-
-            ocupacaoSelect.value =
-                usuario.tipo_usuario;
-
-            outraAtividade.style.display =
-                'none';
-
-            atualizarResumo();
-
-            localStorage.removeItem(CHAVE_RASCUNHO_AGENDA);
-
-        } else {
-
-            alert(
-                resultado.mensagem
-            );
-
-        }
-
-    } catch (erro) {
-
-        console.error(erro);
-
-        alert(
-            'Erro ao conectar com o servidor.'
+        mostrarNotificacao(
+            'Escolha o horário inicial.',
+            'aviso'
         );
 
+        return false;
     }
 
-});
+    const horas =
+        Number(
+            duracao.value
+        );
 
-const CHAVE_RASCUNHO_AGENDA = 'rascunho_agenda';
+    if (
+        !horas ||
+        horas < 1 ||
+        horas > 4
+    ) {
+
+        mostrarNotificacao(
+            'A duração deve ser entre 1 e 4 horas.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    const inicioMinutos =
+        converterHorarioEmMinutos(
+            inicio
+        );
+
+    const finalMinutos =
+        inicioMinutos +
+        horas * 60;
+
+    if (
+        inicioMinutos <
+        7 * 60
+    ) {
+
+        mostrarNotificacao(
+            'O horário inicial deve ser a partir das 07:00.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    if (
+        finalMinutos >
+        21 * 60
+    ) {
+
+        mostrarNotificacao(
+            'O horário final não pode ultrapassar 21:00.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+function limparFormulario() {
+
+    formReserva.reset();
+
+    nomeInput.value =
+        usuario.nome;
+
+    ocupacaoSelect.value =
+        usuario.tipo_usuario;
+
+    outraAtividade.style.display =
+        'none';
+
+    checkbox.checked =
+        false;
+
+    atualizarModoReserva();
+
+    atualizarResumo();
+
+    localStorage.removeItem(
+        CHAVE_RASCUNHO_AGENDA
+    );
+}
+
+
+formReserva.addEventListener(
+    'submit',
+    async (e) => {
+
+        e.preventDefault();
+
+        const modalidade =
+            obterModalidade();
+
+        if (!modalidade) {
+            return;
+        }
+
+        if (
+            checkbox.checked
+        ) {
+
+            if (
+                !validarReservaRecorrente()
+            ) {
+                return;
+            }
+
+            const diaSemana =
+                Number(
+                    diaSemanaSelect.value
+                );
+
+            const quantidadeSemanas =
+                Number(
+                    quantidadeSemanasInput.value
+                );
+
+            const horaInicio =
+                horarioInicioRecorrente.value;
+
+            const horaFim =
+                horarioFimRecorrente.value;
+
+            const datas =
+                calcularDatasRecorrentes(
+                    diaSemana,
+                    quantidadeSemanas,
+                    dataInicioRecorrente.value
+                );
+
+            try {
+
+                const idGrupoRecorrencia =
+                    crypto.randomUUID();
+
+                for (
+                    const data of datas
+                ) {
+
+                    const resposta =
+                        await fetch(
+                            'http://localhost:3333/reservas',
+                            {
+                                method:
+                                    'POST',
+
+                                headers: {
+                                    'Content-Type':
+                                        'application/json'
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        data_reserva:
+                                            data,
+
+                                        horario_inicio:
+                                            horaInicio,
+
+                                        horario_fim:
+                                            horaFim,
+
+                                        modalidade:
+                                            modalidade,
+
+                                        tipo_reserva:
+                                            tipoReservaSelect.value,
+
+                                        recorrente:
+                                            true,
+
+                                        id_usuario:
+                                            usuario.id_usuario,
+
+                                        id_recorrencia:
+                                            idGrupoRecorrencia
+                                    })
+                            }
+                        );
+
+                    const resultado =
+                        await resposta.json();
+
+                    if (
+                        !resultado.sucesso
+                    ) {
+
+                        mostrarNotificacao(
+                            'Erro ao criar reserva de ' +
+                            data +
+                            ': ' +
+                            resultado.mensagem,
+                            'erro'
+                        );
+
+                        return;
+                    }
+                }
+
+                mostrarNotificacao(
+                    'Agendamento recorrente criado com sucesso! (' +
+                    datas.length +
+                    ' reservas)',
+                    'sucesso'
+                );
+
+                limparFormulario();
+
+            } catch (erro) {
+
+                console.error(
+                    erro
+                );
+
+                mostrarNotificacao(
+                    'Erro ao conectar com o servidor.',
+                    'erro'
+                );
+            }
+
+            return;
+        }
+
+        if (
+            !validarReservaUnica()
+        ) {
+            return;
+        }
+
+        const inicio =
+            horarioInicio.value;
+
+        const horas =
+            Number(
+                duracao.value
+            );
+
+        const inicioMinutos =
+            converterHorarioEmMinutos(
+                inicio
+            );
+
+        const finalMinutos =
+            inicioMinutos +
+            horas * 60;
+
+        const horaFinal =
+            converterMinutosEmHorario(
+                finalMinutos
+            );
+
+        try {
+
+            const resposta =
+                await fetch(
+                    'http://localhost:3333/reservas',
+                    {
+                        method:
+                            'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json'
+                        },
+
+                        body:
+                            JSON.stringify({
+                                data_reserva:
+                                    dataReserva.value,
+
+                                horario_inicio:
+                                    inicio,
+
+                                horario_fim:
+                                    horaFinal,
+
+                                modalidade:
+                                    modalidade,
+
+                                tipo_reserva:
+                                    tipoReservaSelect.value,
+
+                                recorrente:
+                                    false,
+
+                                id_usuario:
+                                    usuario.id_usuario
+                            })
+                    }
+                );
+
+            const resultado =
+                await resposta.json();
+
+            if (
+                resultado.sucesso
+            ) {
+
+                mostrarNotificacao(
+                    'Reserva criada com sucesso!',
+                    'sucesso'
+                );
+
+                limparFormulario();
+
+            } else {
+
+                mostrarNotificacao(
+                    resultado.mensagem,
+                    'erro'
+                );
+            }
+
+        } catch (erro) {
+
+            console.error(
+                erro
+            );
+
+            mostrarNotificacao(
+                'Erro ao conectar com o servidor.',
+                'erro'
+            );
+        }
+    }
+);
 
 function salvarRascunho() {
 
     const rascunho = {
-        atividade: atividade.value,
-        atividadePersonalizada: document.getElementById('atividadePersonalizada').value,
-        dataReserva: dataReserva.value,
-        horarioInicio: horarioInicio.value,
-        duracao: duracao.value
+
+        atividade:
+            atividade.value,
+
+        atividadePersonalizada:
+            atividadePersonalizada.value,
+
+        dataReserva:
+            dataReserva.value,
+
+        horarioInicio:
+            horarioInicio.value,
+
+        duracao:
+            duracao.value
     };
 
-    localStorage.setItem(CHAVE_RASCUNHO_AGENDA, JSON.stringify(rascunho));
-
+    localStorage.setItem(
+        CHAVE_RASCUNHO_AGENDA,
+        JSON.stringify(
+            rascunho
+        )
+    );
 }
 
 function restaurarRascunho() {
 
-    const salvo = localStorage.getItem(CHAVE_RASCUNHO_AGENDA);
+    const salvo =
+        localStorage.getItem(
+            CHAVE_RASCUNHO_AGENDA
+        );
 
-    if (!salvo) return;
-
-    const rascunho = JSON.parse(salvo);
-
-    atividade.value = rascunho.atividade || '';
-
-    if (rascunho.atividade === 'Outro') {
-        outraAtividade.style.display = 'flex';
-        document.getElementById('atividadePersonalizada').value =
-            rascunho.atividadePersonalizada || '';
+    if (!salvo) {
+        return;
     }
 
-    dataReserva.value = rascunho.dataReserva || '';
-    horarioInicio.value = rascunho.horarioInicio || '';
-    duracao.value = rascunho.duracao || '1';
+    try {
 
-    atualizarResumo();
+        const rascunho =
+            JSON.parse(
+                salvo
+            );
 
+        atividade.value =
+            rascunho.atividade ||
+            '';
+
+        if (
+            rascunho.atividade ===
+            'Outro'
+        ) {
+
+            outraAtividade.style.display =
+                'flex';
+
+            atividadePersonalizada.value =
+                rascunho.atividadePersonalizada ||
+                '';
+        }
+
+        if (
+            rascunho.dataReserva &&
+            !dataEhPassada(
+                rascunho.dataReserva
+            )
+        ) {
+
+            dataReserva.value =
+                rascunho.dataReserva;
+        }
+
+        horarioInicio.value =
+            rascunho.horarioInicio ||
+            '07:00';
+
+        duracao.value =
+            rascunho.duracao ||
+            '1';
+
+        atualizarResumo();
+
+    } catch (erro) {
+
+        console.error(
+            'Erro ao restaurar rascunho:',
+            erro
+        );
+
+        localStorage.removeItem(
+            CHAVE_RASCUNHO_AGENDA
+        );
+    }
 }
 
-[atividade, dataReserva, horarioInicio, duracao].forEach((campo) => {
-    campo.addEventListener('change', salvarRascunho);
-});
+[
+    atividade,
+    dataReserva,
+    horarioInicio,
+    duracao
+].forEach(
+    (campo) => {
 
-document.getElementById('atividadePersonalizada')
-    .addEventListener('input', salvarRascunho);
+        campo.addEventListener(
+            'change',
+            salvarRascunho
+        );
+    }
+);
+
+atividadePersonalizada.addEventListener(
+    'input',
+    salvarRascunho
+);
 
 restaurarRascunho();

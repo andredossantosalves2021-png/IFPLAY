@@ -23,6 +23,12 @@
 
 <body>
 
+    <div
+        id="notificacaoAgenda"
+        class="notificacao"
+        aria-live="polite"
+    ></div>
+
     <div class="container">
 
         <div class="corpo">
@@ -69,11 +75,20 @@
 
                 <div class="input-group">
                     <label>Tipo de Reserva</label>
-                            <select id="tipoReserva">
-                                <option value="JOGO_LIVRE" selected>Jogo Livre</option>
-                                <option value="AULA">Aula</option>
-                                <option value="EVENTO">Evento</option>
-                            </select>
+
+                    <select id="tipoReserva">
+                        <option value="JOGO_LIVRE" selected>
+                            Jogo Livre
+                        </option>
+
+                        <option value="AULA">
+                            Aula
+                        </option>
+
+                        <option value="EVENTO">
+                            Evento
+                        </option>
+                    </select>
                 </div>
 
                 <div class="input-group">
@@ -106,17 +121,21 @@
                     </select>
                 </div>
 
-                
-
-                <div class="input-group" id="outraAtividade" style="display: none;">
+                <div
+                    class="input-group"
+                    id="outraAtividade"
+                    style="display: none;"
+                >
                     <label>
                         Qual atividade?
                     </label>
 
-                    <input type="text" id="atividadePersonalizada" placeholder="Digite a atividade">
+                    <input
+                        type="text"
+                        id="atividadePersonalizada"
+                        placeholder="Digite a atividade"
+                    >
                 </div>
-
-
 
                 <div id="agendamentoUnico">
 
@@ -126,7 +145,10 @@
                             Data
                         </label>
 
-                        <input type="date" id="dataReserva">
+                        <input
+                            type="date"
+                            id="dataReserva"
+                        >
                     </div>
 
                     <div class="input-group">
@@ -145,10 +167,21 @@
                         </label>
 
                         <select id="duracao">
-                            <option value="1">1 hora</option>
-                            <option value="2">2 horas</option>
-                            <option value="3">3 horas</option>
-                            <option value="4">4 horas</option>
+                            <option value="1">
+                                1 hora
+                            </option>
+
+                            <option value="2">
+                                2 horas
+                            </option>
+
+                            <option value="3">
+                                3 horas
+                            </option>
+
+                            <option value="4">
+                                4 horas
+                            </option>
                         </select>
                     </div>
 
@@ -164,56 +197,115 @@
 
                 </div>
 
-
                 <div class="secao-recorrencia">
+
                     <div class="input-group checkbox-group">
-                        <input type="checkbox" id="agendamentoRecorrente">
+
+                        <input
+                            type="checkbox"
+                            id="agendamentoRecorrente"
+                        >
+
                         <label for="agendamentoRecorrente">
                             Reserva recorrente
                         </label>
+
                     </div>
 
-                    <div id="camposRecorrentes" style="display: none;">
+                    <div
+                        id="camposRecorrentes"
+                        style="display: none;"
+                    >
 
                         <div class="linha">
+
                             <div class="input-group">
                                 <label>Data de Início</label>
-                                <input type="date" id="dataInicioRecorrente">
+
+                                <input
+                                    type="date"
+                                    id="dataInicioRecorrente"
+                                >
                             </div>
 
                             <div class="input-group">
                                 <label>Dia da semana</label>
+
                                 <select id="diaSemana">
-                                    <option value="1">Segunda-feira</option>
-                                    <option value="2">Terça-feira</option>
-                                    <option value="3">Quarta-feira</option>
-                                    <option value="4">Quinta-feira</option>
-                                    <option value="5">Sexta-feira</option>
+                                    <option value="1">
+                                        Segunda-feira
+                                    </option>
+
+                                    <option value="2">
+                                        Terça-feira
+                                    </option>
+
+                                    <option value="3">
+                                        Quarta-feira
+                                    </option>
+
+                                    <option value="4">
+                                        Quinta-feira
+                                    </option>
+
+                                    <option value="5">
+                                        Sexta-feira
+                                    </option>
                                 </select>
                             </div>
 
                             <div class="input-group">
-                                <label>Quantidade de semanas</label>
-                                <input type="number" id="quantidadeSemanas" min="1" max="16" value="1">
+                                <label>
+                                    Quantidade de semanas
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="quantidadeSemanas"
+                                    min="1"
+                                    max="16"
+                                    value="1"
+                                >
                             </div>
+
                         </div>
 
                         <div class="linha">
+
                             <div class="input-group">
                                 <label>Horário Inicial</label>
-                                <input type="time" id="horarioInicioRecorrente">
+
+                                <input
+                                    type="time"
+                                    id="horarioInicioRecorrente"
+                                    min="07:00"
+                                    max="20:00"
+                                    step="3600"
+                                >
                             </div>
 
                             <div class="input-group">
                                 <label>Horário Final</label>
-                                <input type="time" id="horarioFimRecorrente">
+
+                                <input
+                                    type="time"
+                                    id="horarioFimRecorrente"
+                                    min="08:00"
+                                    max="21:00"
+                                    step="3600"
+                                >
                             </div>
+
                         </div>
 
                     </div>
+
                 </div>
 
-                <button class="submit-btn" type="submit">
+                <button
+                    class="submit-btn"
+                    type="submit"
+                >
                     Confirmar Reserva
                 </button>
 
