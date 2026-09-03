@@ -10,188 +10,449 @@ const app = new Hono()
 
 app.use('*', cors())
 
-
-app.use('/*', serveStatic({ root: './public' }))
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+app.use(
+    '/*',
+    serveStatic({
+        root: './public'
+    })
 )
 
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+)
+
+
 app.post('/login', async (c) => {
-  try {
-    const body = await c.req.json()
-    
 
-    const raFornecido = String(body.ra).trim()
-    const senhaFornecida = String(body.senha).trim()
+    try {
 
+        const body = await c.req.json()
 
-    const { data: usuario, error } = await supabase
-      .from('usuario')
-      .select('*')
-      .eq('ra', raFornecido)
-      .maybeSingle()
+        const raFornecido =
+            String(body.ra).trim()
 
-    if (error) {
-      console.error('Erro no Supabase:', error.message)
-      return c.json({ sucesso: false, mensagem: 'Erro ao consultar o banco' }, 500)
+        const senhaFornecida =
+            String(body.senha).trim()
+
+        const {
+            data: usuario,
+            error
+        } = await supabase
+            .from('usuario')
+            .select('*')
+            .eq('ra', raFornecido)
+            .maybeSingle()
+
+        if (error) {
+
+            console.error(
+                'Erro no Supabase:',
+                error.message
+            )
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Erro ao consultar o banco'
+                },
+                500
+            )
+        }
+
+        if (!usuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário não encontrado'
+                },
+                404
+            )
+        }
+
+        const senhaValida =
+            await bcrypt.compare(
+                senhaFornecida,
+                usuario.senha
+            )
+
+        if (!senhaValida) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'RA ou senha inválidos'
+                },
+                401
+            )
+        }
+
+        return c.json({
+            sucesso: true,
+
+            usuario: {
+                id_usuario:
+                    usuario.id_usuario,
+
+                ra:
+                    usuario.ra,
+
+                nome:
+                    usuario.nome,
+
+                email:
+                    usuario.email,
+
+                tipo_usuario:
+                    usuario.tipo_usuario
+            }
+        })
+
+    } catch (err) {
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro ao processar dados'
+            },
+            400
+        )
     }
-
-    if (!usuario) {
-      return c.json({ sucesso: false, mensagem: 'Usuário não encontrado' }, 404)
-    }
-
-    const senhaValida =
-        await bcrypt.compare(senhaFornecida, usuario.senha)
-
-    if (!senhaValida) {
-      return c.json({ sucesso: false, mensagem: 'RA ou senha inválidos' }, 401)
-    }
-
-    return c.json({
-      sucesso: true,
-      usuario: {
-        id_usuario: usuario.id_usuario,
-        ra: usuario.ra,
-        nome: usuario.nome,
-        email: usuario.email,
-        tipo_usuario: usuario.tipo_usuario
-      }
-    })
-
-  } catch (err) {
-    return c.json({ sucesso: false, mensagem: 'Erro ao processar dados' }, 400)
-  }
 })
+
 
 app.get('/reservas', async (c) => {
 
     try {
 
-        const filtro = c.req.query('filtro') || 'geral';
-        const idUsuario = c.req.query('id_usuario');
+        const filtro =
+            c.req.query('filtro') ||
+            'geral'
 
-        const agora = new Date();
-        const hoje = agora.toLocaleDateString('en-CA', {
-            timeZone: 'America/Sao_Paulo'
-        });
-        const horaAtual = agora.toLocaleTimeString('en-GB', {
-            timeZone: 'America/Sao_Paulo',
-            hour12: false
-        });
+        const idUsuario =
+            c.req.query('id_usuario')
 
-        let query = supabase
-            .from('reserva')
-            .select(`*, usuario ( nome )`)
-            .or(`data_reserva.gt.${hoje},and(data_reserva.eq.${hoje},horario_fim.gt.${horaAtual})`)
-            .order('data_reserva', { ascending: true })
-            .order('horario_inicio', { ascending: true });
+        const agora =
+            new Date()
+
+        const hoje =
+            agora.toLocaleDateString(
+                'en-CA',
+                {
+                    timeZone:
+                        'America/Sao_Paulo'
+                }
+            )
+
+        const horaAtual =
+            agora.toLocaleTimeString(
+                'en-GB',
+                {
+                    timeZone:
+                        'America/Sao_Paulo',
+
+                    hour12:
+                        false
+                }
+            )
+
+        const filtroData =
+            'data_reserva.gt.' +
+            hoje +
+            ',and(data_reserva.eq.' +
+            hoje +
+            ',horario_fim.gt.' +
+            horaAtual +
+            ')'
+
+        let query =
+            supabase
+                .from('reserva')
+                .select(
+                    '*, usuario ( nome )'
+                )
+                .or(filtroData)
+                .order(
+                    'data_reserva',
+                    {
+                        ascending: true
+                    }
+                )
+                .order(
+                    'horario_inicio',
+                    {
+                        ascending: true
+                    }
+                )
 
         if (filtro === 'minhas') {
 
             if (!idUsuario) {
-                return c.json({ sucesso: false, mensagem: 'id_usuario é obrigatório.' }, 400);
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'id_usuario é obrigatório.'
+                    },
+                    400
+                )
             }
 
-            query = query
-                .eq('id_usuario', idUsuario)
-                .neq('status', 'CANCELADA');
+            query =
+                query.eq(
+                    'id_usuario',
+                    idUsuario
+                )
 
-        } else if (filtro === 'pendentes') {
+        } else if (
+            filtro === 'pendentes'
+        ) {
 
-            query = query.eq('status', 'PENDENTE');
+            query =
+                query.eq(
+                    'status',
+                    'PENDENTE'
+                )
 
         } else {
 
-            query = query.eq('status', 'APROVADA');
-
+            query =
+                query.eq(
+                    'status',
+                    'APROVADA'
+                )
         }
 
-        const { data, error } = await query;
+        const {
+            data,
+            error
+        } = await query
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reservas: data });
+        return c.json({
+            sucesso: true,
+            reservas: data
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
-    }
 
-});
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 
 app.patch('/reservas/:id', async (c) => {
 
     try {
 
-        const id = c.req.param('id');
-        const body = await c.req.json();
-        const { novoStatus, id_usuario_acao } = body;
+        const id =
+            c.req.param('id')
 
-        if (!['APROVADA', 'CANCELADA'].includes(novoStatus)) {
-            return c.json({ sucesso: false, mensagem: 'Status inválido.' }, 400);
+        const body =
+            await c.req.json()
+
+        const {
+            novoStatus,
+            id_usuario_acao
+        } = body
+
+        if (
+            ![
+                'APROVADA',
+                'CANCELADA'
+            ].includes(novoStatus)
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Status inválido.'
+                },
+                400
+            )
         }
 
-        const { data: reserva, error: erroReserva } = await supabase
+        const {
+            data: reserva,
+            error: erroReserva
+        } = await supabase
             .from('reserva')
             .select('id_usuario')
             .eq('id_reserva', id)
-            .maybeSingle();
+            .maybeSingle()
 
-        if (erroReserva || !reserva) {
-            return c.json({ sucesso: false, mensagem: 'Reserva não encontrada.' }, 404);
+        if (
+            erroReserva ||
+            !reserva
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Reserva não encontrada.'
+                },
+                404
+            )
         }
 
-        const { data: usuarioAcao, error: erroUsuario } = await supabase
+        const {
+            data: usuarioAcao,
+            error: erroUsuario
+        } = await supabase
             .from('usuario')
             .select('tipo_usuario')
-            .eq('id_usuario', id_usuario_acao)
-            .maybeSingle();
+            .eq(
+                'id_usuario',
+                id_usuario_acao
+            )
+            .maybeSingle()
 
-        if (erroUsuario || !usuarioAcao) {
-            return c.json({ sucesso: false, mensagem: 'Usuário inválido.' }, 400);
+        if (
+            erroUsuario ||
+            !usuarioAcao
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário inválido.'
+                },
+                400
+            )
         }
 
-        const ehAdmin = usuarioAcao.tipo_usuario === 'ADMINISTRADOR';
-        const ehDono = Number(reserva.id_usuario) === Number(id_usuario_acao);
+        const ehAdmin =
+            usuarioAcao.tipo_usuario ===
+            'ADMINISTRADOR'
 
-        if (novoStatus === 'APROVADA' && !ehAdmin) {
-            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem aprovar.' }, 403);
+        const ehDono =
+            Number(
+                reserva.id_usuario
+            ) ===
+            Number(
+                id_usuario_acao
+            )
+
+        if (
+            novoStatus ===
+            'APROVADA' &&
+            !ehAdmin
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Apenas administradores podem aprovar.'
+                },
+                403
+            )
         }
 
-        if (novoStatus === 'CANCELADA' && !ehAdmin && !ehDono) {
-            return c.json({ sucesso: false, mensagem: 'Você só pode cancelar suas próprias reservas.' }, 403);
+        if (
+            novoStatus ===
+            'CANCELADA' &&
+            !ehAdmin &&
+            !ehDono
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Você só pode cancelar suas próprias reservas.'
+                },
+                403
+            )
         }
 
-        const { data, error } = await supabase
+        const {
+            data,
+            error
+        } = await supabase
             .from('reserva')
-            .update({ status: novoStatus })
-            .eq('id_reserva', id)
-            .select();
+            .update({
+                status:
+                    novoStatus
+            })
+            .eq(
+                'id_reserva',
+                id
+            )
+            .select()
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reserva: data[0] });
+        return c.json({
+            sucesso: true,
+            reserva: data[0]
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
-    }
 
-});
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 
 app.post('/reservas', async (c) => {
 
     try {
 
-        const body = await c.req.json();
+        const body =
+            await c.req.json()
 
         const {
             data_reserva,
@@ -202,7 +463,7 @@ app.post('/reservas', async (c) => {
             recorrente,
             id_usuario,
             id_recorrencia
-        } = body;
+        } = body
 
         if (
             !data_reserva ||
@@ -211,184 +472,547 @@ app.post('/reservas', async (c) => {
             !modalidade ||
             !id_usuario
         ) {
-            return c.json({ sucesso: false, mensagem: 'Preencha todos os campos.' }, 400);
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Preencha todos os campos.'
+                },
+                400
+            )
         }
 
-        const { data: criador, error: erroCriador } = await supabase
+
+        /*
+         * VERIFICAÇÃO DE CONFLITO
+         *
+         * Existe conflito quando:
+         *
+         * horario_inicio da reserva existente
+         * é menor que o final da nova reserva
+         *
+         * E
+         *
+         * horario_fim da reserva existente
+         * é maior que o início da nova reserva.
+         *
+         * Reservas CANCELADAS são ignoradas.
+         */
+
+        const {
+            data: reservasDoDia,
+            error: erroConflito
+        } = await supabase
+            .from('reserva')
+            .select(
+                'id_reserva, horario_inicio, horario_fim, status'
+            )
+            .eq(
+                'data_reserva',
+                data_reserva
+            )
+            .neq(
+                'status',
+                'CANCELADA'
+            )
+
+        if (erroConflito) {
+
+            console.error(
+                'Erro ao verificar conflito:',
+                erroConflito
+            )
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível verificar a disponibilidade do horário.'
+                },
+                500
+            )
+        }
+
+
+        const existeConflito =
+            reservasDoDia.some(
+                function (reservaExistente) {
+
+                    return (
+                        reservaExistente.horario_inicio <
+                            horario_fim &&
+                        reservaExistente.horario_fim >
+                            horario_inicio
+                    )
+                }
+            )
+
+
+        if (existeConflito) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Este horário já possui uma reserva. Escolha outro período.'
+                },
+                409
+            )
+        }
+
+
+        const {
+            data: criador,
+            error: erroCriador
+        } = await supabase
             .from('usuario')
             .select('tipo_usuario')
-            .eq('id_usuario', id_usuario)
-            .maybeSingle();
+            .eq(
+                'id_usuario',
+                id_usuario
+            )
+            .maybeSingle()
 
-        if (erroCriador || !criador) {
-            return c.json({ sucesso: false, mensagem: 'Usuário inválido.' }, 400);
+        if (
+            erroCriador ||
+            !criador
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário inválido.'
+                },
+                400
+            )
         }
 
         const status =
-            criador.tipo_usuario === 'ALUNO' ? 'PENDENTE' : 'APROVADA';
+            criador.tipo_usuario ===
+            'ALUNO'
+                ? 'PENDENTE'
+                : 'APROVADA'
 
-        const { data, error } =
-            await supabase
-                .from('reserva')
-                .insert([{
-                    data_reserva,
-                    horario_inicio,
-                    horario_fim,
-                    modalidade,
-                    status,
-                    tipo_reserva,
-                    recorrente,
-                    id_usuario,
-                    id_recorrencia: id_recorrencia || null
-                }])
-                .select();
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('reserva')
+            .insert([
+                {
+                    data_reserva:
+                        data_reserva,
+
+                    horario_inicio:
+                        horario_inicio,
+
+                    horario_fim:
+                        horario_fim,
+
+                    modalidade:
+                        modalidade,
+
+                    status:
+                        status,
+
+                    tipo_reserva:
+                        tipo_reserva,
+
+                    recorrente:
+                        recorrente,
+
+                    id_usuario:
+                        id_usuario,
+
+                    id_recorrencia:
+                        id_recorrencia ||
+                        null
+                }
+            ])
+            .select()
+
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            if (
+                error.code ===
+                '23505'
+            ) {
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'Este horário já possui uma reserva. Escolha outro período.'
+                    },
+                    409
+                )
+            }
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reserva: data[0] });
+
+        return c.json({
+            sucesso: true,
+            reserva: data[0]
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
-    }
 
-});
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
 
 
 app.post('/reclamacoes', async (c) => {
 
     try {
 
-        const body = await c.req.parseBody();
-        const { descricao, id_usuario } = body;
-        const foto = body.foto;
+        const body =
+            await c.req.parseBody()
 
-        if (!descricao || !id_usuario) {
-            return c.json({ sucesso: false, mensagem: 'Preencha a descrição.' }, 400);
+        const {
+            descricao,
+            id_usuario
+        } = body
+
+        const foto =
+            body.foto
+
+        if (
+            !descricao ||
+            !id_usuario
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Preencha a descrição.'
+                },
+                400
+            )
         }
 
-        let imagemUrl = null;
+        let imagemUrl =
+            null
 
-        if (foto && foto instanceof File && foto.size > 0) {
+        if (
+            foto &&
+            foto instanceof File &&
+            foto.size > 0
+        ) {
 
-            const nomeArquivo = `${Date.now()}_${foto.name}`;
-            const buffer = await foto.arrayBuffer();
+            const nomeArquivo =
+                String(Date.now()) +
+                '_' +
+                foto.name
 
-            const { error: erroUpload } = await supabase
+            const buffer =
+                await foto.arrayBuffer()
+
+            const {
+                error: erroUpload
+            } = await supabase
                 .storage
                 .from('reclamacoes')
-                .upload(nomeArquivo, buffer, { contentType: foto.type });
+                .upload(
+                    nomeArquivo,
+                    buffer,
+                    {
+                        contentType:
+                            foto.type
+                    }
+                )
 
             if (erroUpload) {
-                console.error(erroUpload);
-                return c.json({ sucesso: false, mensagem: 'Erro ao enviar a imagem.' }, 400);
+
+                console.error(
+                    erroUpload
+                )
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'Erro ao enviar a imagem.'
+                    },
+                    400
+                )
             }
 
-            const { data: urlData } = supabase
+            const {
+                data: urlData
+            } = supabase
                 .storage
                 .from('reclamacoes')
-                .getPublicUrl(nomeArquivo);
+                .getPublicUrl(
+                    nomeArquivo
+                )
 
-            imagemUrl = urlData.publicUrl;
-
+            imagemUrl =
+                urlData.publicUrl
         }
 
-        const { data, error } = await supabase
+        const {
+            data,
+            error
+        } = await supabase
             .from('reclamacao')
-            .insert([{
-                descricao,
-                id_usuario,
-                status: 'PENDENTE',
-                imagem_anexo: imagemUrl
-            }])
-            .select();
+            .insert([
+                {
+                    descricao:
+                        descricao,
+
+                    id_usuario:
+                        id_usuario,
+
+                    status:
+                        'PENDENTE',
+
+                    imagem_anexo:
+                        imagemUrl
+                }
+            ])
+            .select()
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reclamacao: data[0] });
+        return c.json({
+            sucesso: true,
+            reclamacao:
+                data[0]
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
-    }
 
-});
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 
 app.get('/reclamacoes', async (c) => {
 
     try {
 
-        const { data, error } = await supabase
+        const {
+            data,
+            error
+        } = await supabase
             .from('reclamacao')
-            .select('*, usuario(nome)')
-            .order('data_envio', { ascending: false });
+            .select(
+                '*, usuario(nome)'
+            )
+            .order(
+                'data_envio',
+                {
+                    ascending: false
+                }
+            )
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reclamacoes: data });
+        return c.json({
+            sucesso: true,
+            reclamacoes:
+                data
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
-    }
 
-});
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 
 app.patch('/reclamacoes/:id', async (c) => {
 
     try {
 
-        const id = c.req.param('id');
-        const body = await c.req.json();
-        const { resposta, id_usuario_admin } = body;
+        const id =
+            c.req.param('id')
+
+        const body =
+            await c.req.json()
+
+        const {
+            resposta,
+            id_usuario_admin
+        } = body
 
         if (!resposta) {
-            return c.json({ sucesso: false, mensagem: 'Escreva uma resposta.' }, 400);
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Escreva uma resposta.'
+                },
+                400
+            )
         }
 
-        const { data: admin, error: erroAdmin } = await supabase
+        const {
+            data: admin,
+            error: erroAdmin
+        } = await supabase
             .from('usuario')
             .select('tipo_usuario')
-            .eq('id_usuario', id_usuario_admin)
-            .maybeSingle();
+            .eq(
+                'id_usuario',
+                id_usuario_admin
+            )
+            .maybeSingle()
 
-        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
-            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem responder.' }, 403);
+        if (
+            erroAdmin ||
+            !admin ||
+            admin.tipo_usuario !==
+            'ADMINISTRADOR'
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Apenas administradores podem responder.'
+                },
+                403
+            )
         }
 
-        const { data, error } = await supabase
+        const {
+            data,
+            error
+        } = await supabase
             .from('reclamacao')
-            .update({ resposta, status: 'RESOLVIDA' })
-            .eq('id_reclamacao', id)
-            .select();
+            .update({
+                resposta:
+                    resposta,
+
+                status:
+                    'RESOLVIDA'
+            })
+            .eq(
+                'id_reclamacao',
+                id
+            )
+            .select()
 
         if (error) {
-            console.error(error);
-            return c.json({ sucesso: false, mensagem: error.message }, 400);
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
-        return c.json({ sucesso: true, reclamacao: data[0] });
+        return c.json({
+            sucesso: true,
+            reclamacao:
+                data[0]
+        })
 
     } catch (erro) {
-        console.error(erro);
-        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500);
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
     }
-
-});
-
-serve({
-  fetch: app.fetch,
-  port: 3333
-}, (info) => {
-  console.log(`Servidor rodando em http://localhost:${info.port}`)
 })
 
+
+serve(
+    {
+        fetch:
+            app.fetch,
+
+        port:
+            3333
+    },
+
+    function (info) {
+
+        console.log(
+            'Servidor rodando em http://localhost:' +
+            info.port
+        )
+    }
+)
