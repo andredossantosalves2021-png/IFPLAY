@@ -6,9 +6,21 @@ if (!usuario) {
     window.location.replace('../index.html');
 }
 
-
 document.getElementById('boasVindas').textContent =
     `Bem-vindo, ${usuario.nome}!`;
+
+
+const btnReclamacoes = document.getElementById('btnReclamacoes');
+
+if (btnReclamacoes) {
+
+    if (usuario.tipo_usuario !== 'ALUNO') {
+        btnReclamacoes.style.display = 'inline-block';
+    } else {
+        btnReclamacoes.style.display = 'none';
+    }
+}
+
 
 
 const btnTema =

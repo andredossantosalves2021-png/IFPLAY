@@ -835,56 +835,64 @@ app.post('/reclamacoes', async (c) => {
 
 
 app.get('/reclamacoes', async (c) => {
-
     try {
+        // Pega o id_usuario enviado como parâmetro na URL (?id_usuario=X)
+        const idUsuario = c.req.query('id_usuario')
 
-        const {
-            data,
-            error
-        } = await supabase
+        if (!idUsuario) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'ID do usuário é obrigatório.'
+            }, 400)
+        }
+
+        // Consulta o perfil do usuário no Supabase
+        const { data: usuario, error: erroUsuario } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', idUsuario)
+            .maybeSingle()
+
+        if (erroUsuario || !usuario) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Usuário não encontrado.'
+            }, 404)
+        }
+
+        // BLOQUEIO: Se for ALUNO, impede a visualização das reclamações
+        if (usuario.tipo_usuario === 'ALUNO') {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Acesso negado. Apenas administradores e servidores podem ver a lista de reclamações.'
+            }, 403)
+        }
+
+        // Se for ADMINISTRADOR/SERVIDOR, lista todas as reclamações
+        const { data, error } = await supabase
             .from('reclamacao')
-            .select(
-                '*, usuario(nome)'
-            )
-            .order(
-                'data_envio',
-                {
-                    ascending: false
-                }
-            )
+            .select('*, usuario(nome)')
+            .order('data_envio', { ascending: false })
 
         if (error) {
-
             console.error(error)
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        error.message
-                },
-                400
-            )
+            return c.json({
+                sucesso: false,
+                mensagem: error.message
+            }, 400)
         }
 
         return c.json({
             sucesso: true,
-            reclamacoes:
-                data
+            reclamacoes: data
         })
 
     } catch (erro) {
-
         console.error(erro)
-
-        return c.json(
-            {
-                sucesso: false,
-                mensagem:
-                    'Erro interno do servidor.'
-            },
-            500
-        )
+        return c.json({
+            sucesso: false,
+            mensagem: 'Erro interno do servidor.'
+        }, 500)
     }
 })
 
