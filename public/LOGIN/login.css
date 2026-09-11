@@ -37,6 +37,20 @@ body {
     color: black;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8f1f2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+
 .input-login {
     position: relative;
     width: 100%;

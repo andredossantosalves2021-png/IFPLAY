@@ -30,6 +30,32 @@ h1 {
     margin-bottom: 20px;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8f1f2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
+html.dark-mode ::-webkit-scrollbar {
+  width: 10px;
+}
+
+html.dark-mode ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 8px;
+}
+
 .input-group {
     display: flex;
     flex-direction: column;
