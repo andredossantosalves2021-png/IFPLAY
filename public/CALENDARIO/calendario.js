@@ -16,6 +16,11 @@ const btnProximo = document.querySelector('.calendar-controls button:last-child'
 
 async function carregarReservas() {
 
+    // Desenha o calendário na hora, sem esperar a API responder.
+    // Assim a tela nunca fica com conteúdo quebrado/desatualizado
+    // enquanto o fetch ainda está em andamento.
+    gerarCalendario(anoAtual, mesAtual);
+
     try {
 
         const resposta =

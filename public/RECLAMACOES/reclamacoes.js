@@ -131,7 +131,8 @@ async function carregarReclamacoes() {
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reclamacoes'
+                'http://localhost:3333/reclamacoes?id_usuario=' +
+                usuario.id_usuario
             );
 
         const resultado =
@@ -139,8 +140,14 @@ async function carregarReclamacoes() {
 
         if (!resultado.sucesso) {
 
-            listaReclamacoes.textContent =
-                resultado.mensagem;
+            // Se for ALUNO, o backend nega acesso à lista (403) de propósito.
+            // Não é um erro real, então escondemos a seção em vez de mostrar mensagem de erro.
+            if (usuario.tipo_usuario === 'ALUNO') {
+                listaReclamacoes.closest('.card').style.display = 'none';
+            } else {
+                listaReclamacoes.textContent =
+                    resultado.mensagem;
+            }
 
             return;
         }

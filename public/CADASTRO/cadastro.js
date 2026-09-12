@@ -17,7 +17,7 @@ form.addEventListener('submit', async (e) => {
     if (senha !== confirmarSenha) {
         mensagemErro.textContent = 'As senhas do SUAP digitadas não são iguais.';
         return;
-    }
+    }z  
 
     if (senha.length < 6) {
         mensagemErro.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
