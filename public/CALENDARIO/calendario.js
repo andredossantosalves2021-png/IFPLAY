@@ -154,9 +154,10 @@ function abrirDetalhes(dia, ano, mes, reservasDoDia) {
                     : 'tag-jogo';
             item.className = `reservation-item ${classeTipo}`;
             item.innerHTML = `
+                <span style="font-size: 17px; color: #610303"> <strong> ${reserva.usuario}</strong> </span> <br>
                 <strong>${reserva.esporte}</strong> <span class="tipo-label">${reserva.tipo}</span><br>
                 ${reserva.horario}<br>
-                ${reserva.usuario}
+                
             `;
             modal.appendChild(item);
         });

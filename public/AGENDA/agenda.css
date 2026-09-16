@@ -283,6 +283,9 @@ html.dark-mode .corpo {
 html.dark-mode .corpo-header p {
     color: #94a3b8;
 }
+html.dark-mode .corpo-header h2 {
+    color: #10b981;
+}
 
 html.dark-mode .input-group input,
 html.dark-mode .input-group select {
