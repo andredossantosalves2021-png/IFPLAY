@@ -1,0 +1,174 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #e8f1f2;
+    font-family: Arial, sans-serif;
+    transition: background 0.3s;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+}
+
+.corpo {
+    width: 100%;
+    max-width: 800px;
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s, color 0.3s;
+}
+
+.corpo-header {
+    margin-bottom: 30px;
+}
+
+.corpo-header h2 {
+    margin-bottom: 10px;
+    color: #047857
+}
+
+.corpo-header p {
+    color: #666;
+}
+
+.linha {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    flex: 1;
+}
+
+.input-group label {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.input-group input,
+.input-group select {
+    padding: 12px;
+    border: 2px solid #047857;
+    border-radius: 10px;
+    font-size: 15px;
+    width: 100%;
+    transition: background 0.3s,
+                border-color 0.3s,
+                color 0.3s;
+}
+
+#outraAtividade {
+    margin-top: -5px;
+}
+
+#resumoReserva {
+    background: #e8f1f2;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    color: #047857;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    transition: background 0.3s, color 0.3s;
+}
+
+.secao-recorrencia {
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 25px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex: none;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-group label {
+    margin-bottom: 0 !important;
+    cursor: pointer;
+}
+
+#camposRecorrentes {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #10b981;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.submit-btn:hover {
+    background: #059669;
+}
+
+
+html.dark-mode body {
+    background: #1e293b;
+}
+
+html.dark-mode .corpo {
+    background: #0f172a;
+    color: #f8fafc;
+    box-shadow: none;
+}
+
+html.dark-mode .corpo-header p {
+    color: #94a3b8;
+}
+
+html.dark-mode .input-group input,
+html.dark-mode .input-group select {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+html.dark-mode input::placeholder {
+    color: #94a3b8;
+}
+
+html.dark-mode input:disabled,
+html.dark-mode select:disabled {
+    background: #334155;
+    color: #cbd5e1;
+}
+
+html.dark-mode #resumoReserva {
+    background: #1e293b;
+    color: #38bdf8;
+}
+
+html.dark-mode i {
+    color: #f8fafc;
+}
