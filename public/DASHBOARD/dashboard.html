@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFPlay</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="dashboard.css">
+
+</head>
+
+<body>
+
+    <main>
+        <header class="navbar">
+            <div class="action-bar">
+                <a class="btn-action" href="../CALENDARIO/calendario.html" target="frame">
+                    Calendário
+                </a>
+
+                <a class="btn-action" href="../AGENDA/agenda.html" target="frame">
+                    Agendar
+                </a>
+
+                <a class="btn-action" href="../RESERVAS/reservas.html" target="frame">
+                    Reservas
+                </a>
+
+<a class="btn-action" href="../RECLAMACOES/reclamacoes.html" target="frame" id="btnReclamacoes" style="display: none;">
+    Reclamações
+</a>
+                </a>
+            </div>
+
+            <div class="usuario-info">
+                <button id="btnTema" class="btn-icone">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+
+                <h2 id="boasVindas">
+                    Bem-vindo, Andre!
+                </h2>
+
+                <button id="btnSair" class="btn-action">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <div class="iframe-container">
+            <iframe
+                src="../CALENDARIO/calendario.html"
+                name="frame"
+                id="dashFrame">
+            </iframe>
+        </div>
+    </main>
+
+
+
+    <div
+        id="modalSair"
+        class="modal-overlay"
+        aria-hidden="true"
+    >
+        <div
+            class="modal-sair"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tituloModalSair"
+        >
+
+            <div class="modal-icone">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+
+            <h2 id="tituloModalSair">
+                Deseja sair?
+            </h2>
+
+            <p>
+                Tem certeza de que deseja sair do IFPlay?
+            </p>
+
+            <div class="modal-acoes">
+
+                <button
+                    id="btnCancelarSaida"
+                    class="btn-modal btn-cancelar"
+                    type="button"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    id="btnConfirmarSaida"
+                    class="btn-modal btn-confirmar"
+                    type="button"
+                >
+                    Sair
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <script src="dashboard.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reclamações</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+            document.documentElement.className = isDark ? 'dark-mode' : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="reclamacoes.css">
+
+</head>
+
+<body>
+
+    <div
+        id="notificacao"
+        class="notificacao"
+        aria-live="polite"
+    ></div>
+
+    <div class="container">
+
+        <div class="card">
+            <h1>Nova Reclamação</h1>
+
+            <form id="formReclamacao">
+
+                <div class="input-group">
+                    <label>Descreva sua reclamação</label>
+                    <textarea id="descricao" rows="4" placeholder="Conte o que aconteceu..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>Anexar foto (opcional)</label>
+                    <input type="file" id="foto" accept="image/*">
+
+                    <div id="previewFoto" class="preview-foto" style="display: none;">
+                        <span id="nomeArquivo"></span>
+                        <button type="button" id="btnRemoverFoto">Remover</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Enviar Reclamação</button>
+
+            </form>
+        </div>
+
+        <div class="card">
+            <h1>Reclamações da Comunidade</h1>
+            <div id="listaReclamacoes"></div>
+        </div>
+
+    </div>
+
+    <script src="reclamacoes.js"></script>
+
+</body>
+
+</html>

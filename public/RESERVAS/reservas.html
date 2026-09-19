@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas</title>
+
+    <script>
+        (function () {
+            const isDark =
+                localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className =
+                isDark
+                    ? 'dark-mode'
+                    : '';
+        })();
+    </script>
+
+    <link
+        rel="stylesheet"
+        href="reservas.css"
+    >
+
+</head>
+
+<body>
+
+    <div
+        id="notificacaoReservas"
+        class="notificacao"
+        aria-live="polite"
+    ></div>
+
+    <div class="container">
+
+        <div class="card">
+
+            <div
+                class="filtros-reservas"
+                id="filtrosReservas"
+            >
+
+                <button
+                    class="filtro-btn ativo"
+                    data-filtro="geral"
+                >
+                    Geral
+                </button>
+
+                <button
+                    class="filtro-btn"
+                    data-filtro="minhas"
+                >
+                    Minhas Reservas
+                </button>
+
+                <button
+                    class="filtro-btn"
+                    id="btnPendentes"
+                    data-filtro="pendentes"
+                    style="display: none;"
+                >
+                    Pendentes
+                </button>
+
+            </div>
+
+            <div
+                class="filtros-status"
+                id="filtrosStatus"
+            >
+
+                <span class="filtros-status-titulo">
+                    Status:
+                </span>
+
+                <button
+                    class="status-filtro-btn ativo"
+                    data-status="TODAS"
+                >
+                    Todas
+                </button>
+
+                <button
+                    class="status-filtro-btn"
+                    data-status="APROVADA"
+                >
+                    Aprovadas
+                </button>
+
+                <button
+                    class="status-filtro-btn"
+                    data-status="PENDENTE"
+                >
+                    Pendentes
+                </button>
+
+                <button
+                    class="status-filtro-btn"
+                    data-status="CANCELADA"
+                >
+                    Canceladas
+                </button>
+
+            </div>
+
+            <div class="alert">
+                Escolha um horário disponível para evitar conflitos.
+            </div>
+
+            <div class="reservas">
+
+                <h1 id="tituloReservas">
+                    Reservas
+                </h1>
+
+                <p
+                    id="descricaoReservas"
+                    class="descricao-reservas"
+                >
+                    Consulte as reservas cadastradas no sistema.
+                </p>
+
+            </div>
+
+            <div id="listaReservas">
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="reservas.js"></script>
+
+</body>
+
+</html>

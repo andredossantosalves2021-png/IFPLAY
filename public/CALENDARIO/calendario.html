@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário de Reservas</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="calendario.css">
+    
+</head>
+
+<body>
+
+    <div class="container">
+
+
+        <div class="calendar-card">
+
+            <div class="calendar-header">
+                <h2>
+                    <i class="fa-regular fa-calendar"></i>
+                    Calendário de Reservas
+                </h2>
+
+                <p>
+                    Consulte os dias e horários reservados da quadra.
+                </p>
+            </div>
+
+
+            <div class="calendar-controls">
+
+                <button>&#8249;</button>
+
+                <h2></h2>
+
+                <button>&#8250;</button>
+
+            </div>
+
+
+            <div class="week-days">
+                <span>Dom</span>
+                <span>Seg</span>
+                <span>Ter</span>
+                <span>Qua</span>
+                <span>Qui</span>
+                <span>Sex</span>
+                <span>Sáb</span>
+            </div>
+
+
+            <div class="calendar-grid"></div>
+
+        </div>
+
+    </div>
+
+    <script src="calendario.js"></script>
+
+</body>
+
+</html>
