@@ -12,13 +12,9 @@ document.getElementById('boasVindas').textContent =
 
 const btnReclamacoes = document.getElementById('btnReclamacoes');
 
+// Todo mundo pode fazer reclamação (aluno vê só as próprias, admin/servidor vê todas)
 if (btnReclamacoes) {
-
-    if (usuario.tipo_usuario !== 'ALUNO') {
-        btnReclamacoes.style.display = 'inline-block';
-    } else {
-        btnReclamacoes.style.display = 'none';
-    }
+    btnReclamacoes.style.display = 'inline-block';
 }
 
 
@@ -206,4 +202,4 @@ document.addEventListener(
             fecharModalSaida();
         }
     }
-);
+);  

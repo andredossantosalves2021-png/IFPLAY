@@ -21,6 +21,13 @@ const fotoInput =
 const listaReclamacoes =
     document.getElementById('listaReclamacoes');
 
+const tituloLista =
+    document.getElementById('tituloLista');
+
+if (usuario.tipo_usuario === 'ALUNO') {
+    tituloLista.textContent = 'Minhas Reclamações';
+}
+
 const previewFoto =
     document.getElementById('previewFoto');
 
@@ -140,14 +147,8 @@ async function carregarReclamacoes() {
 
         if (!resultado.sucesso) {
 
-            // Se for ALUNO, o backend nega acesso à lista (403) de propósito.
-            // Não é um erro real, então escondemos a seção em vez de mostrar mensagem de erro.
-            if (usuario.tipo_usuario === 'ALUNO') {
-                listaReclamacoes.closest('.card').style.display = 'none';
-            } else {
-                listaReclamacoes.textContent =
-                    resultado.mensagem;
-            }
+            listaReclamacoes.textContent =
+                resultado.mensagem;
 
             return;
         }

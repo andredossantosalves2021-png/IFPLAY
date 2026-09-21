@@ -860,19 +860,19 @@ app.get('/reclamacoes', async (c) => {
             }, 404)
         }
 
-        // BLOQUEIO: Se for ALUNO, impede a visualização das reclamações
-        if (usuario.tipo_usuario === 'ALUNO') {
-            return c.json({
-                sucesso: false,
-                mensagem: 'Acesso negado. Apenas administradores e servidores podem ver a lista de reclamações.'
-            }, 403)
-        }
-
-        // Se for ADMINISTRADOR/SERVIDOR, lista todas as reclamações
-        const { data, error } = await supabase
+        // Monta a consulta base
+        let consulta = supabase
             .from('reclamacao')
             .select('*, usuario(nome)')
             .order('data_envio', { ascending: false })
+
+        // ALUNO só pode ver as próprias reclamações.
+        // ADMINISTRADOR/SERVIDOR vê a lista completa de todo mundo.
+        if (usuario.tipo_usuario === 'ALUNO') {
+            consulta = consulta.eq('id_usuario', idUsuario)
+        }
+
+        const { data, error } = await consulta
 
         if (error) {
             console.error(error)
