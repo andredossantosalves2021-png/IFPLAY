@@ -233,7 +233,8 @@ html.dark-mode ::-webkit-scrollbar-thumb {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
+    padding: 20px;
+    z-index: 9998;
 }
 
 .modal-detalhes {
@@ -241,7 +242,9 @@ html.dark-mode ::-webkit-scrollbar-thumb {
     border-radius: 16px;
     padding: 30px;
     width: 90%;
-    max-width: 400px;
+    max-width: 440px;
+    max-height: 80vh;
+    overflow-y: auto;
     box-shadow: 0 10px 40px rgba(15, 23, 42, .2);
 }
 
@@ -277,6 +280,41 @@ html.dark-mode ::-webkit-scrollbar-thumb {
     border-radius: 999px;
     font-size: 11px;
     font-weight: bold;
+}
+
+.acoes-reserva-calendario {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-aprovar-calendario,
+.btn-cancelar-calendario {
+    flex: 1;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    transition:
+        opacity .2s,
+        transform .2s;
+}
+
+.btn-aprovar-calendario {
+    background: #22c55e;
+}
+
+.btn-cancelar-calendario {
+    background: #ef4444;
+}
+
+.btn-aprovar-calendario:hover,
+.btn-cancelar-calendario:hover {
+    opacity: .9;
+    transform: translateY(-1px);
 }
 
 .sem-reservas {
@@ -316,6 +354,152 @@ html.dark-mode ::-webkit-scrollbar-thumb {
     color: #6b7280;
 }
 
+.modal-confirmacao-calendario {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, .25);
+}
+
+.modal-confirmacao-icone {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.modal-confirmacao-calendario.aprovar .modal-confirmacao-icone {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.modal-confirmacao-calendario h3 {
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.modal-confirmacao-calendario p {
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.modal-confirmacao-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.btn-modal-voltar,
+.btn-modal-confirmar {
+    flex: 1;
+    border: none;
+    padding: 11px 15px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-modal-voltar {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-modal-confirmar {
+    background: #ef4444;
+    color: white;
+}
+
+.modal-confirmacao-calendario.aprovar .btn-modal-confirmar {
+    background: #22c55e;
+}
+
+.btn-modal-voltar:disabled,
+.btn-modal-confirmar:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.notificacao-calendario {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: auto;
+    min-width: 300px;
+    max-width: 380px;
+    padding: 16px 20px 16px 54px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(30px);
+    transition:
+        opacity .3s ease,
+        transform .3s ease,
+        visibility .3s;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .15);
+    z-index: 9999;
+}
+
+.notificacao-calendario::before {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.notificacao-calendario.ativa {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.notificacao-calendario.sucesso {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    border-left: 5px solid #10b981;
+}
+
+.notificacao-calendario.sucesso::before {
+    content: "✓";
+    background: #10b981;
+    color: white;
+}
+
+.notificacao-calendario.erro {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    border-left: 5px solid #ef4444;
+}
+
+.notificacao-calendario.erro::before {
+    content: "!";
+    background: #ef4444;
+    color: white;
+}
+
 html.dark-mode body {
     background: #1e293b;
     color: #f8fafc;
@@ -353,8 +537,23 @@ html.dark-mode .day.hoje {
     border-color: #10b981;
 }
 
-html.dark-mode .modal-detalhes {
+html.dark-mode .modal-detalhes,
+html.dark-mode .modal-confirmacao-calendario {
     background: #0f172a;
+    color: #f8fafc;
+}
+
+html.dark-mode .modal-confirmacao-calendario h3 {
+    color: #f8fafc;
+}
+
+html.dark-mode .modal-confirmacao-calendario p {
+    color: #94a3b8;
+}
+
+html.dark-mode .btn-modal-voltar {
+    background: #334155;
+    color: #f8fafc;
 }
 
 html.dark-mode .sem-reservas {
@@ -364,4 +563,40 @@ html.dark-mode .sem-reservas {
 html.dark-mode .reservation-pendente,
 html.dark-mode .reservation-item-pendente {
     border-color: #f59e0b;
+}
+
+html.dark-mode .notificacao-calendario.sucesso {
+    background: #052e24;
+    color: #d1fae5;
+    border-color: #166534;
+    border-left-color: #22c55e;
+}
+
+html.dark-mode .notificacao-calendario.erro {
+    background: #450a0a;
+    color: #fee2e2;
+    border-color: #7f1d1d;
+    border-left-color: #ef4444;
+}
+
+@media (max-width: 600px) {
+
+    .acoes-reserva-calendario,
+    .modal-confirmacao-acoes {
+        flex-direction: column;
+    }
+
+    .notificacao-calendario {
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        transform: translateY(-20px);
+    }
+
+    .notificacao-calendario.ativa {
+        transform: translateY(0);
+    }
 }

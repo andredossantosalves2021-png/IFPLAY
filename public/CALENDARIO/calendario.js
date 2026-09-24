@@ -3,16 +3,81 @@ const meses = [
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+const usuario =
+    JSON.parse(
+        localStorage.getItem(
+            'usuario'
+        )
+    );
+
 let dataAtual = new Date();
 let anoAtual = dataAtual.getFullYear();
 let mesAtual = dataAtual.getMonth();
 
 let reservas = {};
+let tempoNotificacao;
 
 const tituloMes = document.querySelector('.calendar-controls h2');
 const grid = document.querySelector('.calendar-grid');
 const btnAnterior = document.querySelector('.calendar-controls button:first-child');
 const btnProximo = document.querySelector('.calendar-controls button:last-child');
+
+function mostrarNotificacao(
+    mensagem,
+    tipo
+) {
+
+    clearTimeout(
+        tempoNotificacao
+    );
+
+    let notificacao =
+        document.getElementById(
+            'notificacaoCalendario'
+        );
+
+    if (!notificacao) {
+
+        notificacao =
+            document.createElement(
+                'div'
+            );
+
+        notificacao.id =
+            'notificacaoCalendario';
+
+        document.body.appendChild(
+            notificacao
+        );
+    }
+
+    notificacao.textContent =
+        mensagem;
+
+    notificacao.className =
+        'notificacao-calendario ' +
+        tipo;
+
+    requestAnimationFrame(
+        function () {
+
+            notificacao.classList.add(
+                'ativa'
+            );
+        }
+    );
+
+    tempoNotificacao =
+        setTimeout(
+            function () {
+
+                notificacao.classList.remove(
+                    'ativa'
+                );
+            },
+            4000
+        );
+}
 
 async function carregarReservas() {
 
@@ -37,6 +102,11 @@ async function carregarReservas() {
                 resultado.mensagem
             );
 
+            mostrarNotificacao(
+                'Não foi possível carregar as reservas.',
+                'erro'
+            );
+
             return;
         }
 
@@ -56,7 +126,9 @@ async function carregarReservas() {
                     Number(partes[2]);
 
                 if (!reservas[chave]) {
-                    reservas[chave] = [];
+
+                    reservas[chave] =
+                        [];
                 }
 
                 reservas[chave].push({
@@ -100,12 +172,18 @@ async function carregarReservas() {
             'Erro ao carregar reservas:',
             erro
         );
+
+        mostrarNotificacao(
+            'Erro ao carregar as reservas.',
+            'erro'
+        );
     }
 }
 
 function formatarHorario(horario) {
 
     if (!horario) {
+
         return '';
     }
 
@@ -122,19 +200,25 @@ function formatarHorario(horario) {
 function obterClasseTipo(tipo) {
 
     if (tipo === 'AULA') {
+
         return 'tag-aula';
     }
 
     if (tipo === 'EVENTO') {
+
         return 'tag-evento';
     }
 
     return 'tag-jogo';
 }
 
-function gerarCalendario(ano, mes) {
+function gerarCalendario(
+    ano,
+    mes
+) {
 
-    grid.innerHTML = '';
+    grid.innerHTML =
+        '';
 
     tituloMes.textContent =
         meses[mes] +
@@ -162,12 +246,16 @@ function gerarCalendario(ano, mes) {
     ) {
 
         const vazio =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
 
         vazio.className =
             'day empty';
 
-        grid.appendChild(vazio);
+        grid.appendChild(
+            vazio
+        );
     }
 
     const hoje =
@@ -180,7 +268,9 @@ function gerarCalendario(ano, mes) {
     ) {
 
         const celula =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
 
         celula.className =
             'day';
@@ -346,14 +436,7 @@ function abrirDetalhes(
     reservasDoDia
 ) {
 
-    const modalExistente =
-        document.querySelector(
-            '.modal-overlay'
-        );
-
-    if (modalExistente) {
-        modalExistente.remove();
-    }
+    fecharModais();
 
     const overlay =
         document.createElement(
@@ -434,13 +517,10 @@ function abrirDetalhes(
                     nome
                 );
 
-                const quebra1 =
+                item.appendChild(
                     document.createElement(
                         'br'
-                    );
-
-                item.appendChild(
-                    quebra1
+                    )
                 );
 
                 const esporte =
@@ -471,13 +551,10 @@ function abrirDetalhes(
                     tipo
                 );
 
-                const quebra2 =
+                item.appendChild(
                     document.createElement(
                         'br'
-                    );
-
-                item.appendChild(
-                    quebra2
+                    )
                 );
 
                 const horario =
@@ -511,6 +588,117 @@ function abrirDetalhes(
                     item.appendChild(
                         status
                     );
+
+                    if (
+                        usuario &&
+                        usuario.tipo_usuario ===
+                        'ADMINISTRADOR'
+                    ) {
+
+                        const acoes =
+                            document.createElement(
+                                'div'
+                            );
+
+                        acoes.className =
+                            'acoes-reserva-calendario';
+
+                        const btnAprovar =
+                            document.createElement(
+                                'button'
+                            );
+
+                        btnAprovar.className =
+                            'btn-aprovar-calendario';
+
+                        btnAprovar.textContent =
+                            'Aprovar';
+
+                        btnAprovar.addEventListener(
+                            'click',
+                            function (evento) {
+
+                                evento.stopPropagation();
+
+                                abrirConfirmacao({
+                                    titulo:
+                                        'Aprovar reserva?',
+
+                                    mensagem:
+                                        'Esta reserva será marcada como aprovada.',
+
+                                    textoBotao:
+                                        'Aprovar',
+
+                                    tipo:
+                                        'aprovar',
+
+                                    aoConfirmar:
+                                        async function () {
+
+                                            return await atualizarStatus(
+                                                reserva.id,
+                                                'APROVADA'
+                                            );
+                                        }
+                                });
+                            }
+                        );
+
+                        const btnCancelar =
+                            document.createElement(
+                                'button'
+                            );
+
+                        btnCancelar.className =
+                            'btn-cancelar-calendario';
+
+                        btnCancelar.textContent =
+                            'Cancelar';
+
+                        btnCancelar.addEventListener(
+                            'click',
+                            function (evento) {
+
+                                evento.stopPropagation();
+
+                                abrirConfirmacao({
+                                    titulo:
+                                        'Cancelar reserva?',
+
+                                    mensagem:
+                                        'Esta reserva será marcada como cancelada.',
+
+                                    textoBotao:
+                                        'Cancelar reserva',
+
+                                    tipo:
+                                        'cancelar',
+
+                                    aoConfirmar:
+                                        async function () {
+
+                                            return await atualizarStatus(
+                                                reserva.id,
+                                                'CANCELADA'
+                                            );
+                                        }
+                                });
+                            }
+                        );
+
+                        acoes.appendChild(
+                            btnAprovar
+                        );
+
+                        acoes.appendChild(
+                            btnCancelar
+                        );
+
+                        item.appendChild(
+                            acoes
+                        );
+                    }
                 }
 
                 modal.appendChild(
@@ -582,6 +770,309 @@ function abrirDetalhes(
         overlay
     );
 }
+
+function abrirConfirmacao(
+    configuracao
+) {
+
+    fecharModais();
+
+    const overlay =
+        document.createElement(
+            'div'
+        );
+
+    overlay.className =
+        'modal-overlay';
+
+    const modal =
+        document.createElement(
+            'div'
+        );
+
+    modal.className =
+        'modal-confirmacao-calendario';
+
+    if (
+        configuracao.tipo ===
+        'aprovar'
+    ) {
+
+        modal.classList.add(
+            'aprovar'
+        );
+    }
+
+    const icone =
+        document.createElement(
+            'div'
+        );
+
+    icone.className =
+        'modal-confirmacao-icone';
+
+    icone.textContent =
+        configuracao.tipo ===
+        'aprovar'
+            ? '✓'
+            : '!';
+
+    const titulo =
+        document.createElement(
+            'h3'
+        );
+
+    titulo.textContent =
+        configuracao.titulo;
+
+    const mensagem =
+        document.createElement(
+            'p'
+        );
+
+    mensagem.textContent =
+        configuracao.mensagem;
+
+    const acoes =
+        document.createElement(
+            'div'
+        );
+
+    acoes.className =
+        'modal-confirmacao-acoes';
+
+    const btnVoltar =
+        document.createElement(
+            'button'
+        );
+
+    btnVoltar.className =
+        'btn-modal-voltar';
+
+    btnVoltar.textContent =
+        'Voltar';
+
+    btnVoltar.addEventListener(
+        'click',
+        function () {
+
+            overlay.remove();
+        }
+    );
+
+    const btnConfirmar =
+        document.createElement(
+            'button'
+        );
+
+    btnConfirmar.className =
+        'btn-modal-confirmar';
+
+    btnConfirmar.textContent =
+        configuracao.textoBotao;
+
+    btnConfirmar.addEventListener(
+        'click',
+        async function () {
+
+            btnConfirmar.disabled =
+                true;
+
+            btnVoltar.disabled =
+                true;
+
+            btnConfirmar.textContent =
+                'Aguarde...';
+
+            const sucesso =
+                await configuracao.aoConfirmar();
+
+            if (
+                document.body.contains(
+                    overlay
+                )
+            ) {
+
+                overlay.remove();
+            }
+
+            if (!sucesso) {
+
+                btnConfirmar.disabled =
+                    false;
+
+                btnVoltar.disabled =
+                    false;
+            }
+        }
+    );
+
+    acoes.appendChild(
+        btnVoltar
+    );
+
+    acoes.appendChild(
+        btnConfirmar
+    );
+
+    modal.appendChild(
+        icone
+    );
+
+    modal.appendChild(
+        titulo
+    );
+
+    modal.appendChild(
+        mensagem
+    );
+
+    modal.appendChild(
+        acoes
+    );
+
+    overlay.appendChild(
+        modal
+    );
+
+    overlay.addEventListener(
+        'click',
+        function (evento) {
+
+            if (
+                evento.target ===
+                overlay
+            ) {
+
+                overlay.remove();
+            }
+        }
+    );
+
+    document.body.appendChild(
+        overlay
+    );
+}
+
+async function atualizarStatus(
+    idReserva,
+    novoStatus
+) {
+
+    if (!usuario) {
+
+        mostrarNotificacao(
+            'Usuário não identificado.',
+            'erro'
+        );
+
+        return false;
+    }
+
+    try {
+
+        const resposta =
+            await fetch(
+                'http://localhost:3333/reservas/' +
+                idReserva,
+                {
+                    method:
+                        'PATCH',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+
+                    body:
+                        JSON.stringify({
+                            novoStatus:
+                                novoStatus,
+
+                            id_usuario_acao:
+                                usuario.id_usuario
+                        })
+                }
+            );
+
+        const resultado =
+            await resposta.json();
+
+        if (!resultado.sucesso) {
+
+            mostrarNotificacao(
+                resultado.mensagem ||
+                'Não foi possível atualizar a reserva.',
+                'erro'
+            );
+
+            return false;
+        }
+
+        if (
+            novoStatus ===
+            'APROVADA'
+        ) {
+
+            mostrarNotificacao(
+                'Reserva aprovada com sucesso!',
+                'sucesso'
+            );
+
+        } else {
+
+            mostrarNotificacao(
+                'Reserva cancelada com sucesso!',
+                'sucesso'
+            );
+        }
+
+        await carregarReservas();
+
+        return true;
+
+    } catch (erro) {
+
+        console.error(
+            erro
+        );
+
+        mostrarNotificacao(
+            'Erro ao atualizar a reserva.',
+            'erro'
+        );
+
+        return false;
+    }
+}
+
+function fecharModais() {
+
+    document
+        .querySelectorAll(
+            '.modal-overlay'
+        )
+        .forEach(
+            function (modal) {
+
+                modal.remove();
+            }
+        );
+}
+
+document.addEventListener(
+    'keydown',
+    function (evento) {
+
+        if (
+            evento.key ===
+            'Escape'
+        ) {
+
+            fecharModais();
+        }
+    }
+);
 
 btnAnterior.addEventListener(
     'click',
