@@ -121,6 +121,9 @@ const notificacaoAgenda =
 const CHAVE_RASCUNHO_AGENDA =
     'rascunho_agenda';
 
+const CHAVE_DATA_CALENDARIO =
+    'data_reserva_calendario';
+
 let tempoNotificacao;
 
 nomeInput.value =
@@ -128,7 +131,6 @@ nomeInput.value =
 
 ocupacaoSelect.value =
     usuario.tipo_usuario;
-
 
 function mostrarNotificacao(
     mensagem,
@@ -166,7 +168,6 @@ function mostrarNotificacao(
             4000
         );
 }
-
 
 function obterDataHoje() {
 
@@ -228,6 +229,49 @@ function dataEhPassada(
     return data < dataHoje;
 }
 
+function dataEhValidaParaAgenda(
+    data
+) {
+
+    if (
+        !data ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+            data
+        )
+    ) {
+
+        return false;
+    }
+
+    if (
+        data < dataHoje ||
+        data > dataMaxima
+    ) {
+
+        return false;
+    }
+
+    const partes =
+        data
+            .split('-')
+            .map(Number);
+
+    const dataTeste =
+        new Date(
+            partes[0],
+            partes[1] - 1,
+            partes[2]
+        );
+
+    return (
+        dataTeste.getFullYear() ===
+            partes[0] &&
+        dataTeste.getMonth() ===
+            partes[1] - 1 &&
+        dataTeste.getDate() ===
+            partes[2]
+    );
+}
 
 atividade.addEventListener(
     'change',
@@ -294,7 +338,6 @@ checkbox.addEventListener(
     'change',
     atualizarModoReserva
 );
-
 
 for (
     let hora = 7;
@@ -423,7 +466,6 @@ duracao.addEventListener(
 
 atualizarResumo();
 
-
 function calcularDatasRecorrentes(
     diaSemana,
     quantidadeSemanas,
@@ -523,7 +565,6 @@ function calcularDatasRecorrentes(
     return datas;
 }
 
-
 function obterModalidade() {
 
     if (
@@ -565,7 +606,6 @@ function obterModalidade() {
 
     return atividade.value;
 }
-
 
 function validarReservaRecorrente() {
 
@@ -708,7 +748,6 @@ function validarReservaRecorrente() {
     return true;
 }
 
-
 function validarReservaUnica() {
 
     if (
@@ -807,7 +846,6 @@ function validarReservaUnica() {
     return true;
 }
 
-
 function limparFormulario() {
 
     formReserva.reset();
@@ -832,7 +870,6 @@ function limparFormulario() {
         CHAVE_RASCUNHO_AGENDA
     );
 }
-
 
 formReserva.addEventListener(
     'submit',
@@ -1174,6 +1211,32 @@ function restaurarRascunho() {
     }
 }
 
+function aplicarDataDoCalendario() {
+
+    const dataSelecionada =
+        sessionStorage.getItem(
+            CHAVE_DATA_CALENDARIO
+        );
+
+    sessionStorage.removeItem(
+        CHAVE_DATA_CALENDARIO
+    );
+
+    if (
+        !dataEhValidaParaAgenda(
+            dataSelecionada
+        )
+    ) {
+
+        return;
+    }
+
+    dataReserva.value =
+        dataSelecionada;
+
+    salvarRascunho();
+}
+
 [
     atividade,
     dataReserva,
@@ -1195,3 +1258,5 @@ atividadePersonalizada.addEventListener(
 );
 
 restaurarRascunho();
+
+aplicarDataDoCalendario();

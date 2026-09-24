@@ -197,6 +197,31 @@ function formatarHorario(horario) {
     );
 }
 
+function formatarDataParaAgenda(
+    ano,
+    mes,
+    dia
+) {
+
+    return (
+        String(ano) +
+        '-' +
+        String(
+            mes + 1
+        ).padStart(
+            2,
+            '0'
+        ) +
+        '-' +
+        String(
+            dia
+        ).padStart(
+            2,
+            '0'
+        )
+    );
+}
+
 function obterClasseTipo(tipo) {
 
     if (tipo === 'AULA') {
@@ -722,6 +747,65 @@ function abrirDetalhes(
 
         modal.appendChild(
             vazio
+        );
+    }
+
+    const dataSelecionada =
+        formatarDataParaAgenda(
+            ano,
+            mes,
+            dia
+        );
+
+    const hoje =
+        new Date();
+
+    hoje.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    const dataDoDia =
+        new Date(
+            ano,
+            mes,
+            dia
+        );
+
+    if (
+        dataDoDia >=
+        hoje
+    ) {
+
+        const btnCriarReserva =
+            document.createElement(
+                'button'
+            );
+
+        btnCriarReserva.className =
+            'btn-criar-reserva';
+
+        btnCriarReserva.textContent =
+            '+ Criar reserva';
+
+        btnCriarReserva.addEventListener(
+            'click',
+            function () {
+
+                sessionStorage.setItem(
+                    'data_reserva_calendario',
+                    dataSelecionada
+                );
+
+                window.location.href =
+                    '../AGENDA/agenda.html';
+            }
+        );
+
+        modal.appendChild(
+            btnCriarReserva
         );
     }
 
