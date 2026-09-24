@@ -36,16 +36,6 @@ const botoesStatus =
         '.status-filtro-btn'
     );
 
-const btnPendentes =
-    document.getElementById(
-        'btnPendentes'
-    );
-
-const filtrosStatus =
-    document.getElementById(
-        'filtrosStatus'
-    );
-
 const tituloReservas =
     document.getElementById(
         'tituloReservas'
@@ -71,19 +61,6 @@ let reservasCarregadas =
     [];
 
 let tempoNotificacao;
-
-
-
-if (
-    usuario.tipo_usuario ===
-    'ADMINISTRADOR'
-) {
-
-    btnPendentes.style.display =
-        'inline-block';
-}
-
-
 
 function mostrarNotificacao(
     mensagem,
@@ -122,8 +99,6 @@ function mostrarNotificacao(
         );
 }
 
-
-
 function atualizarTitulo() {
 
     if (
@@ -140,28 +115,12 @@ function atualizarTitulo() {
         return;
     }
 
-    if (
-        filtroAtual ===
-        'pendentes'
-    ) {
-
-        tituloReservas.textContent =
-            'Reservas Pendentes';
-
-        descricaoReservas.textContent =
-            'Analise as reservas que aguardam aprovação.';
-
-        return;
-    }
-
     tituloReservas.textContent =
         'Reservas';
 
     descricaoReservas.textContent =
         'Consulte as reservas cadastradas no sistema.';
 }
-
-
 
 function mostrarCarregamento() {
 
@@ -183,8 +142,6 @@ function mostrarCarregamento() {
         estado
     );
 }
-
-
 
 async function carregarReservas() {
 
@@ -241,8 +198,6 @@ async function carregarReservas() {
     }
 }
 
-
-
 function aplicarFiltroStatus() {
 
     let reservasFiltradas =
@@ -265,8 +220,6 @@ function aplicarFiltroStatus() {
         reservasFiltradas
     );
 }
-
-
 
 function mostrarEstadoVazio(
     mensagem
@@ -311,8 +264,6 @@ function mostrarEstadoVazio(
         estado
     );
 }
-
-
 
 function renderizarReservas(
     reservas
@@ -425,8 +376,6 @@ function renderizarReservas(
     );
 }
 
-
-
 function formatarStatus(
     status
 ) {
@@ -447,7 +396,6 @@ function formatarStatus(
 
     return 'PENDENTE';
 }
-
 
 function formatarData(
     data
@@ -475,8 +423,6 @@ function formatarData(
         partes[0]
     );
 }
-
-
 
 function criarCardIndividual(
     reserva
@@ -603,115 +549,6 @@ function criarCardIndividual(
 
     if (
         filtroAtual ===
-        'pendentes' &&
-        usuario.tipo_usuario ===
-        'ADMINISTRADOR' &&
-        reserva.status ===
-        'PENDENTE'
-    ) {
-
-        const acoes =
-            document.createElement(
-                'div'
-            );
-
-        acoes.className =
-            'acoes-admin';
-
-        const btnAprovar =
-            document.createElement(
-                'button'
-            );
-
-        btnAprovar.className =
-            'btn-aprovar';
-
-        btnAprovar.textContent =
-            'Aprovar';
-
-        btnAprovar.addEventListener(
-            'click',
-            () => {
-
-                abrirConfirmacao({
-                    titulo:
-                        'Aprovar reserva?',
-
-                    mensagem:
-                        'Esta reserva será marcada como aprovada.',
-
-                    textoBotao:
-                        'Aprovar',
-
-                    tipo:
-                        'aprovar',
-
-                    aoConfirmar:
-                        async () => {
-
-                            await atualizarStatus(
-                                reserva.id_reserva,
-                                'APROVADA'
-                            );
-                        }
-                });
-            }
-        );
-
-        const btnCancelar =
-            document.createElement(
-                'button'
-            );
-
-        btnCancelar.className =
-            'btn-cancelar';
-
-        btnCancelar.textContent =
-            'Cancelar';
-
-        btnCancelar.addEventListener(
-            'click',
-            () => {
-
-                abrirConfirmacao({
-                    titulo:
-                        'Cancelar reserva?',
-
-                    mensagem:
-                        'Esta reserva será marcada como cancelada.',
-
-                    textoBotao:
-                        'Cancelar reserva',
-
-                    tipo:
-                        'cancelar',
-
-                    aoConfirmar:
-                        async () => {
-
-                            await atualizarStatus(
-                                reserva.id_reserva,
-                                'CANCELADA'
-                            );
-                        }
-                });
-            }
-        );
-
-        acoes.appendChild(
-            btnAprovar
-        );
-
-        acoes.appendChild(
-            btnCancelar
-        );
-
-        item.appendChild(
-            acoes
-        );
-
-    } else if (
-        filtroAtual ===
         'minhas' &&
         reserva.status !==
         'CANCELADA'
@@ -780,8 +617,6 @@ function criarCardIndividual(
 
     return item;
 }
-
-
 
 function criarCardGrupo(
     ocorrencias
@@ -1025,8 +860,6 @@ function criarCardGrupo(
     return card;
 }
 
-
-
 function abrirDetalhesGrupo(
     ocorrencias
 ) {
@@ -1064,9 +897,7 @@ function abrirDetalhesGrupo(
 
     const podeCancelar =
         filtroAtual ===
-        'minhas' ||
-        usuario.tipo_usuario ===
-        'ADMINISTRADOR';
+        'minhas';
 
     ocorrencias
         .slice()
@@ -1267,7 +1098,6 @@ function abrirDetalhesGrupo(
     );
 }
 
-
 function abrirConfirmacao(
     configuracao
 ) {
@@ -1456,8 +1286,6 @@ function abrirConfirmacao(
     );
 }
 
-
-
 function fecharModais() {
 
     document
@@ -1485,8 +1313,6 @@ document.addEventListener(
         }
     }
 );
-
-
 
 async function atualizarStatus(
     idReserva,
@@ -1537,16 +1363,6 @@ async function atualizarStatus(
 
         if (
             novoStatus ===
-            'APROVADA'
-        ) {
-
-            mostrarNotificacao(
-                'Reserva aprovada com sucesso!',
-                'sucesso'
-            );
-
-        } else if (
-            novoStatus ===
             'CANCELADA'
         ) {
 
@@ -1574,8 +1390,6 @@ async function atualizarStatus(
         return false;
     }
 }
-
-
 
 botoesFiltro.forEach(
     (botao) => {
@@ -1614,20 +1428,6 @@ botoesFiltro.forEach(
                     }
                 );
 
-                if (
-                    filtroAtual ===
-                    'pendentes'
-                ) {
-
-                    filtrosStatus.style.display =
-                        'none';
-
-                } else {
-
-                    filtrosStatus.style.display =
-                        'flex';
-                }
-
                 atualizarTitulo();
 
                 carregarReservas();
@@ -1635,8 +1435,6 @@ botoesFiltro.forEach(
         );
     }
 );
-
-
 
 botoesStatus.forEach(
     (botao) => {
@@ -1667,13 +1465,9 @@ botoesStatus.forEach(
     }
 );
 
-
-
 atualizarTitulo();
 
 carregarReservas();
-
-
 
 setInterval(
     carregarReservas,
