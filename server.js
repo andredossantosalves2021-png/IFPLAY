@@ -966,6 +966,164 @@ app.get('/reclamacoes', async (c) => {
     }
 })
 
+app.delete('/reclamacoes/:id', async (c) => {
+
+    try {
+
+        const id =
+            c.req.param('id')
+
+        const idUsuario =
+            c.req.query('id_usuario')
+
+        if (!idUsuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
+        }
+
+        const {
+            data: reclamacao,
+            error: erroReclamacao
+        } = await supabase
+            .from('reclamacao')
+            .select(
+                'id_reclamacao, id_usuario, status'
+            )
+            .eq(
+                'id_reclamacao',
+                id
+            )
+            .maybeSingle()
+
+        if (
+            erroReclamacao ||
+            !reclamacao
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Reclamação não encontrada.'
+                },
+                404
+            )
+        }
+
+        const ehAutor =
+            Number(
+                reclamacao.id_usuario
+            ) ===
+            Number(
+                idUsuario
+            )
+
+        if (!ehAutor) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Você só pode excluir suas próprias reclamações.'
+                },
+                403
+            )
+        }
+
+        if (
+            reclamacao.status !==
+            'PENDENTE'
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Apenas reclamações pendentes podem ser excluídas.'
+                },
+                403
+            )
+        }
+
+        const {
+            data: reclamacaoExcluida,
+            error: erroExclusao
+        } = await supabase
+            .from('reclamacao')
+            .delete()
+            .eq(
+                'id_reclamacao',
+                id
+            )
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .eq(
+                'status',
+                'PENDENTE'
+            )
+            .select(
+                'id_reclamacao'
+            )
+            .maybeSingle()
+
+        if (erroExclusao) {
+
+            console.error(
+                erroExclusao
+            )
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível excluir a reclamação.'
+                },
+                400
+            )
+        }
+
+        if (!reclamacaoExcluida) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'A reclamação não foi excluída. Atualize a página e tente novamente.'
+                },
+                409
+            )
+        }
+
+        return c.json({
+            sucesso: true,
+            mensagem:
+                'Reclamação excluída com sucesso.'
+        })
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 app.patch('/reclamacoes/:id', async (c) => {
 
     try {

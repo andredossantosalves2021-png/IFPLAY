@@ -40,10 +40,22 @@ const btnRemoverFoto =
 const notificacao =
     document.getElementById('notificacao');
 
+const modalExcluir =
+    document.getElementById('modalExcluir');
+
+const btnCancelarExclusao =
+    document.getElementById('btnCancelarExclusao');
+
+const btnConfirmarExclusao =
+    document.getElementById('btnConfirmarExclusao');
+
 const CHAVE_RASCUNHO =
     'rascunho_reclamacao';
 
 let tempoNotificacao;
+
+let idReclamacaoParaExcluir =
+    null;
 
 const rascunhoSalvo =
     localStorage.getItem(CHAVE_RASCUNHO);
@@ -131,6 +143,165 @@ function mostrarNotificacao(
         );
 }
 
+function abrirModalExclusao(
+    idReclamacao
+) {
+
+    idReclamacaoParaExcluir =
+        idReclamacao;
+
+    modalExcluir.classList.add(
+        'ativo'
+    );
+
+    modalExcluir.setAttribute(
+        'aria-hidden',
+        'false'
+    );
+
+    document.body.classList.add(
+        'modal-aberto'
+    );
+
+    btnCancelarExclusao.focus();
+}
+
+function fecharModalExclusao() {
+
+    modalExcluir.classList.remove(
+        'ativo'
+    );
+
+    modalExcluir.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    document.body.classList.remove(
+        'modal-aberto'
+    );
+
+    idReclamacaoParaExcluir =
+        null;
+}
+
+btnCancelarExclusao.addEventListener(
+    'click',
+    fecharModalExclusao
+);
+
+modalExcluir.addEventListener(
+    'click',
+    (evento) => {
+
+        if (
+            evento.target ===
+            modalExcluir
+        ) {
+
+            fecharModalExclusao();
+        }
+    }
+);
+
+document.addEventListener(
+    'keydown',
+    (evento) => {
+
+        if (
+            evento.key ===
+                'Escape' &&
+            modalExcluir.classList.contains(
+                'ativo'
+            )
+        ) {
+
+            fecharModalExclusao();
+        }
+    }
+);
+
+btnConfirmarExclusao.addEventListener(
+    'click',
+    async () => {
+
+        if (
+            idReclamacaoParaExcluir ===
+            null
+        ) {
+
+            return;
+        }
+
+        const id =
+            idReclamacaoParaExcluir;
+
+        btnConfirmarExclusao.disabled =
+            true;
+
+        btnCancelarExclusao.disabled =
+            true;
+
+        btnConfirmarExclusao.textContent =
+            'Excluindo...';
+
+        try {
+
+            const resposta =
+                await fetch(
+                    'http://localhost:3333/reclamacoes/' +
+                    id +
+                    '?id_usuario=' +
+                    usuario.id_usuario,
+                    {
+                        method: 'DELETE'
+                    }
+                );
+
+            const resultado =
+                await resposta.json();
+
+            if (!resultado.sucesso) {
+
+                mostrarNotificacao(
+                    resultado.mensagem,
+                    'erro'
+                );
+
+                return;
+            }
+
+            fecharModalExclusao();
+
+            mostrarNotificacao(
+                'Reclamação excluída com sucesso!',
+                'sucesso'
+            );
+
+            await carregarReclamacoes();
+
+        } catch (erro) {
+
+            console.error(erro);
+
+            mostrarNotificacao(
+                'Erro ao excluir reclamação.',
+                'erro'
+            );
+
+        } finally {
+
+            btnConfirmarExclusao.disabled =
+                false;
+
+            btnCancelarExclusao.disabled =
+                false;
+
+            btnConfirmarExclusao.textContent =
+                'Excluir';
+        }
+    }
+);
 
 async function carregarReclamacoes() {
 
@@ -165,7 +336,6 @@ async function carregarReclamacoes() {
             '<p>Erro ao carregar reclamações.</p>';
     }
 }
-
 
 function renderizarReclamacoes(
     reclamacoes
@@ -390,13 +560,67 @@ function renderizarReclamacoes(
                 );
             }
 
+            const ehAutor =
+                Number(
+                    reclamacao.id_usuario
+                ) ===
+                Number(
+                    usuario.id_usuario
+                );
+
+            if (
+                reclamacao.status ===
+                    'PENDENTE' &&
+                ehAutor
+            ) {
+
+                const areaAcoes =
+                    document.createElement(
+                        'div'
+                    );
+
+                areaAcoes.className =
+                    'acoes-reclamacao';
+
+                const btnExcluir =
+                    document.createElement(
+                        'button'
+                    );
+
+                btnExcluir.type =
+                    'button';
+
+                btnExcluir.className =
+                    'btn-excluir-reclamacao';
+
+                btnExcluir.textContent =
+                    'Excluir reclamação';
+
+                btnExcluir.addEventListener(
+                    'click',
+                    () => {
+
+                        abrirModalExclusao(
+                            reclamacao.id_reclamacao
+                        );
+                    }
+                );
+
+                areaAcoes.appendChild(
+                    btnExcluir
+                );
+
+                item.appendChild(
+                    areaAcoes
+                );
+            }
+
             listaReclamacoes.appendChild(
                 item
             );
         }
     );
 }
-
 
 async function responder(
     idReclamacao,
@@ -467,7 +691,6 @@ async function responder(
         );
     }
 }
-
 
 formReclamacao.addEventListener(
     'submit',

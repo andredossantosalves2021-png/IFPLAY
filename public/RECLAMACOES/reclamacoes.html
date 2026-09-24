@@ -59,6 +59,47 @@
 
     </div>
 
+    <div
+        id="modalExcluir"
+        class="modal-overlay"
+        aria-hidden="true"
+    >
+        <div
+            class="modal-confirmacao"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tituloModalExcluir"
+        >
+            <div class="icone-modal-excluir">!</div>
+
+            <h2 id="tituloModalExcluir">
+                Excluir reclamação?
+            </h2>
+
+            <p>
+                Esta reclamação será excluída permanentemente. Essa ação não poderá ser desfeita.
+            </p>
+
+            <div class="acoes-modal">
+                <button
+                    type="button"
+                    id="btnCancelarExclusao"
+                    class="btn-modal-cancelar"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
+                    id="btnConfirmarExclusao"
+                    class="btn-modal-excluir"
+                >
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="reclamacoes.js"></script>
 
 </body>
