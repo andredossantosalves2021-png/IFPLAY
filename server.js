@@ -22,7 +22,6 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 )
 
-
 app.post('/login', async (c) => {
 
     try {
@@ -125,7 +124,6 @@ app.post('/login', async (c) => {
     }
 })
 
-
 app.get('/reservas', async (c) => {
 
     try {
@@ -220,6 +218,19 @@ app.get('/reservas', async (c) => {
                     'PENDENTE'
                 )
 
+        } else if (
+            filtro === 'calendario'
+        ) {
+
+            query =
+                query.in(
+                    'status',
+                    [
+                        'APROVADA',
+                        'PENDENTE'
+                    ]
+                )
+
         } else {
 
             query =
@@ -267,7 +278,6 @@ app.get('/reservas', async (c) => {
         )
     }
 })
-
 
 app.patch('/reservas/:id', async (c) => {
 
@@ -446,7 +456,6 @@ app.patch('/reservas/:id', async (c) => {
     }
 })
 
-
 function horarioParaMinutos(horario) {
 
     const partes =
@@ -463,7 +472,6 @@ function horarioParaMinutos(horario) {
         minutos
     )
 }
-
 
 app.post('/reservas', async (c) => {
 
@@ -501,24 +509,6 @@ app.post('/reservas', async (c) => {
             )
         }
 
-
-        /*
-         * VERIFICAÇÃO DE CONFLITO
-         *
-         * Os horários são convertidos para minutos
-         * antes da comparação.
-         *
-         * Isso evita diferenças entre formatos como:
-         *
-         * 08:00
-         * 08:00:00
-         *
-         * Uma reserva pode começar exatamente no
-         * horário em que outra termina.
-         *
-         * Reservas CANCELADAS são ignoradas.
-         */
-
         const {
             data: reservasDoDia,
             error: erroConflito
@@ -553,7 +543,6 @@ app.post('/reservas', async (c) => {
             )
         }
 
-
         const novoInicio =
             horarioParaMinutos(
                 horario_inicio
@@ -563,7 +552,6 @@ app.post('/reservas', async (c) => {
             horarioParaMinutos(
                 horario_fim
             )
-
 
         const existeConflito =
             reservasDoDia.some(
@@ -588,7 +576,6 @@ app.post('/reservas', async (c) => {
                 }
             )
 
-
         if (existeConflito) {
 
             return c.json(
@@ -600,7 +587,6 @@ app.post('/reservas', async (c) => {
                 409
             )
         }
-
 
         const {
             data: criador,
@@ -634,7 +620,6 @@ app.post('/reservas', async (c) => {
             'ALUNO'
                 ? 'PENDENTE'
                 : 'APROVADA'
-
 
         const {
             data,
@@ -674,7 +659,6 @@ app.post('/reservas', async (c) => {
             ])
             .select()
 
-
         if (error) {
 
             console.error(error)
@@ -704,7 +688,6 @@ app.post('/reservas', async (c) => {
             )
         }
 
-
         return c.json({
             sucesso: true,
             reserva: data[0]
@@ -724,7 +707,6 @@ app.post('/reservas', async (c) => {
         )
     }
 })
-
 
 app.post('/reclamacoes', async (c) => {
 
@@ -873,8 +855,8 @@ app.post('/reclamacoes', async (c) => {
     }
 })
 
-
 app.get('/reclamacoes', async (c) => {
+
     try {
 
         const idUsuario =
@@ -984,7 +966,6 @@ app.get('/reclamacoes', async (c) => {
     }
 })
 
-
 app.patch('/reclamacoes/:id', async (c) => {
 
     try {
@@ -1093,7 +1074,6 @@ app.patch('/reclamacoes/:id', async (c) => {
         )
     }
 })
-
 
 serve(
     {
