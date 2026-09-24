@@ -447,6 +447,24 @@ app.patch('/reservas/:id', async (c) => {
 })
 
 
+function horarioParaMinutos(horario) {
+
+    const partes =
+        String(horario).split(':')
+
+    const horas =
+        Number(partes[0])
+
+    const minutos =
+        Number(partes[1])
+
+    return (
+        horas * 60 +
+        minutos
+    )
+}
+
+
 app.post('/reservas', async (c) => {
 
     try {
@@ -487,15 +505,16 @@ app.post('/reservas', async (c) => {
         /*
          * VERIFICAÇÃO DE CONFLITO
          *
-         * Existe conflito quando:
+         * Os horários são convertidos para minutos
+         * antes da comparação.
          *
-         * horario_inicio da reserva existente
-         * é menor que o final da nova reserva
+         * Isso evita diferenças entre formatos como:
          *
-         * E
+         * 08:00
+         * 08:00:00
          *
-         * horario_fim da reserva existente
-         * é maior que o início da nova reserva.
+         * Uma reserva pode começar exatamente no
+         * horário em que outra termina.
          *
          * Reservas CANCELADAS são ignoradas.
          */
@@ -535,15 +554,36 @@ app.post('/reservas', async (c) => {
         }
 
 
+        const novoInicio =
+            horarioParaMinutos(
+                horario_inicio
+            )
+
+        const novoFim =
+            horarioParaMinutos(
+                horario_fim
+            )
+
+
         const existeConflito =
             reservasDoDia.some(
                 function (reservaExistente) {
 
+                    const inicioExistente =
+                        horarioParaMinutos(
+                            reservaExistente.horario_inicio
+                        )
+
+                    const fimExistente =
+                        horarioParaMinutos(
+                            reservaExistente.horario_fim
+                        )
+
                     return (
-                        reservaExistente.horario_inicio <
-                            horario_fim &&
-                        reservaExistente.horario_fim >
-                            horario_inicio
+                        inicioExistente <
+                            novoFim &&
+                        fimExistente >
+                            novoInicio
                     )
                 }
             )
@@ -836,50 +876,92 @@ app.post('/reclamacoes', async (c) => {
 
 app.get('/reclamacoes', async (c) => {
     try {
-        // Pega o id_usuario enviado como parâmetro na URL (?id_usuario=X)
-        const idUsuario = c.req.query('id_usuario')
+
+        const idUsuario =
+            c.req.query('id_usuario')
 
         if (!idUsuario) {
-            return c.json({
-                sucesso: false,
-                mensagem: 'ID do usuário é obrigatório.'
-            }, 400)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
         }
 
-        // Consulta o perfil do usuário no Supabase
-        const { data: usuario, error: erroUsuario } = await supabase
+        const {
+            data: usuario,
+            error: erroUsuario
+        } = await supabase
             .from('usuario')
             .select('tipo_usuario')
-            .eq('id_usuario', idUsuario)
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
             .maybeSingle()
 
-        if (erroUsuario || !usuario) {
-            return c.json({
-                sucesso: false,
-                mensagem: 'Usuário não encontrado.'
-            }, 404)
+        if (
+            erroUsuario ||
+            !usuario
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário não encontrado.'
+                },
+                404
+            )
         }
 
-        // Monta a consulta base
-        let consulta = supabase
-            .from('reclamacao')
-            .select('*, usuario(nome)')
-            .order('data_envio', { ascending: false })
+        let consulta =
+            supabase
+                .from('reclamacao')
+                .select(
+                    '*, usuario(nome)'
+                )
+                .order(
+                    'data_envio',
+                    {
+                        ascending:
+                            false
+                    }
+                )
 
-        // ALUNO só pode ver as próprias reclamações.
-        // ADMINISTRADOR/SERVIDOR vê a lista completa de todo mundo.
-        if (usuario.tipo_usuario === 'ALUNO') {
-            consulta = consulta.eq('id_usuario', idUsuario)
+        if (
+            usuario.tipo_usuario ===
+            'ALUNO'
+        ) {
+
+            consulta =
+                consulta.eq(
+                    'id_usuario',
+                    idUsuario
+                )
         }
 
-        const { data, error } = await consulta
+        const {
+            data,
+            error
+        } = await consulta
 
         if (error) {
+
             console.error(error)
-            return c.json({
-                sucesso: false,
-                mensagem: error.message
-            }, 400)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        error.message
+                },
+                400
+            )
         }
 
         return c.json({
@@ -888,11 +970,17 @@ app.get('/reclamacoes', async (c) => {
         })
 
     } catch (erro) {
+
         console.error(erro)
-        return c.json({
-            sucesso: false,
-            mensagem: 'Erro interno do servidor.'
-        }, 500)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
     }
 })
 
