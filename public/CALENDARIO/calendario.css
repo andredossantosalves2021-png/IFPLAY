@@ -600,6 +600,21 @@ html.dark-mode .notificacao-calendario.erro {
     border-left-color: #ef4444;
 }
 
+html.dark-mode .tag-jogo {
+    background: #8ad0ff;
+    color: #183086;
+}
+
+html.dark-mode .tag-aula {
+    background: #a6fdc4;
+    color: #0b5f2b;
+}
+
+html.dark-mode .tag-evento {
+    background: #ffbde2;
+    color: #9d174d;
+}
+
 @media (max-width: 600px) {
 
     .acoes-reserva-calendario,

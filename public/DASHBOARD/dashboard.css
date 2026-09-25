@@ -21,16 +21,16 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding-top: 20px;
+    gap: clamp(8px, 1.5%, 15px);
+    margin-bottom: clamp(10px, 2%, 20px);
+    padding-top: clamp(10px, 2%, 20px);
 }
 
 .action-bar {
     display: flex;
-    gap: 10px;
+    gap: clamp(5px, 1%, 10px);
     background-color: rgba(255, 255, 255, 0.1);
-    padding: 8px;
+    padding: clamp(4px, 0.8%, 8px);
     border-radius: 50px;
 }
 
@@ -38,13 +38,13 @@ body {
     background: transparent;
     border: none;
     color: #ffffffd0;
-    padding: 8px 20px;
+    padding: clamp(6px, 1%, 8px) clamp(12px, 2%, 20px);
     border-radius: 30px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 15px;
+    gap: clamp(4px, 0.8%, 8px);
+    font-size: clamp(13px, 95%, 15px);
     text-decoration: none;
     transition: 0.2s;
     font-weight: bold;
@@ -57,17 +57,17 @@ body {
 .usuario-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: clamp(8px, 1.5%, 15px);
 }
 
 #boasVindas {
     color: white;
-    font-size: 18px;
+    font-size: clamp(15px, 100%, 18px);
 }
 
 .btn-icone {
-    width: 40px;
-    height: 40px;
+    width: clamp(32px, 5vw, 40px);
+    height: clamp(32px, 5vw, 40px);
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
@@ -76,7 +76,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 16px;
+    font-size: clamp(14px, 90%, 16px);
     transition: 0.2s;
 }
 
@@ -91,13 +91,10 @@ body {
 
 
 iframe {
-    width: 200vh;
+    width: min(200vh, 95vw);
     height: 89vh;
-    border: none;
-    border-radius: 10px;
     border: 2px solid rgba(255, 255, 255, .1);
     border-radius: 20px;
-
 }
 
 .iframe::-webkit-scrollbar {
@@ -110,7 +107,7 @@ iframe {
 
 .iframe::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 8px;
+  border-radius: 80%;
 }
 
 
@@ -141,7 +138,7 @@ html.dark-mode .container {
     justify-content: center;
     align-items: center;
 
-    padding: 20px;
+    padding: clamp(12px, 2%, 20px);
 
     z-index: 1000;
 
@@ -160,13 +157,13 @@ html.dark-mode .container {
 
 .modal-sair {
     width: 100%;
-    max-width: 420px;
+    max-width: clamp(280px, 90%, 420px);
 
     background-color: white;
 
-    border-radius: 18px;
+    border-radius: clamp(10px, 2%, 18px);
 
-    padding: 30px;
+    padding: clamp(15px, 3%, 30px);
 
     text-align: center;
 
@@ -184,10 +181,10 @@ html.dark-mode .container {
 }
 
 .modal-icone {
-    width: 60px;
-    height: 60px;
+    width: clamp(48px, 8vw, 60px);
+    height: clamp(48px, 8vw, 60px);
 
-    margin: 0 auto 15px;
+    margin: 0 auto clamp(8px, 1.5%, 15px);
 
     border-radius: 50%;
 
@@ -198,43 +195,43 @@ html.dark-mode .container {
     justify-content: center;
     align-items: center;
 
-    font-size: 24px;
+    font-size: clamp(18px, 100%, 24px);
 }
 
 .modal-sair h2 {
-    margin-bottom: 8px;
+    margin-bottom: clamp(4px, 1%, 8px);
 
     color: #111827;
 
-    font-size: 24px;
+    font-size: clamp(18px, 100%, 24px);
 }
 
 .modal-sair p {
-    margin-bottom: 25px;
+    margin-bottom: clamp(12px, 2.5%, 25px);
 
     color: #6b7280;
 
-    font-size: 15px;
+    font-size: clamp(13px, 95%, 15px);
 }
 
 .modal-acoes {
     display: flex;
     justify-content: center;
 
-    gap: 12px;
+    gap: clamp(6px, 1.2%, 12px);
 }
 
 .btn-modal {
     flex: 1;
 
-    padding: 12px 20px;
+    padding: clamp(8px, 1.2%, 12px) clamp(12px, 2%, 20px);
 
     border: none;
-    border-radius: 10px;
+    border-radius: clamp(6px, 1%, 10px);
 
     cursor: pointer;
 
-    font-size: 15px;
+    font-size: clamp(13px, 95%, 15px);
     font-weight: 600;
 
     transition: 0.2s;
@@ -283,7 +280,7 @@ html.dark-mode .btn-cancelar:hover {
 
 
 
-@media(max-width: 768px) {
+@media (max-width: 768px) {
     .navbar {
         flex-direction: column;
         align-items: center;
@@ -291,5 +288,45 @@ html.dark-mode .btn-cancelar:hover {
 
     .modal-acoes {
         flex-direction: column;
+    }
+
+    iframe {
+        width: 95vw;
+        height: 75vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding-top: 12px;
+        margin-bottom: 12px;
+    }
+
+    .action-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    #boasVindas {
+        font-size: 15px;
+    }
+
+    .modal-sair {
+        padding: 18px;
+    }
+
+    .modal-sair h2 {
+        font-size: 19px;
+    }
+
+    iframe {
+        width: 95vw;
+        height: 65vh;
+        border-radius: 12px;
     }
 }
