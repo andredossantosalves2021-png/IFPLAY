@@ -16,6 +16,13 @@ body {
     padding: clamp(15px, 3%, 30px);
 }
 
+@media (min-width: 1440px) {
+
+    .corpo {
+        max-width: 960px;
+    }
+}
+
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -26,7 +33,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 80%;
+  border-radius: 8px;
 }
 
 html.dark-mode ::-webkit-scrollbar {
@@ -39,7 +46,7 @@ html.dark-mode ::-webkit-scrollbar-track {
 
 html.dark-mode ::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 80%;
+  border-radius: 8px;
 }
 
 .corpo {
@@ -345,6 +352,17 @@ html.dark-mode #notificacaoAgenda.notificacao.erro {
 html.dark-mode #notificacaoAgenda.notificacao.erro::before {
     background: #ef4444;
     color: white;
+}
+
+@media (max-width: 1024px) {
+
+    .container {
+        padding: 24px;
+    }
+
+    .corpo {
+        padding: 24px;
+    }
 }
 
 @media (max-width: 768px) {

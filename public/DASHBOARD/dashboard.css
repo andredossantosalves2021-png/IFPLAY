@@ -107,7 +107,7 @@ iframe {
 
 .iframe::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 80%;
+  border-radius: 8px;
 }
 
 

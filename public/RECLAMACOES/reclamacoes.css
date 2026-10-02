@@ -22,6 +22,17 @@ body.modal-aberto {
     gap: 25px;
 }
 
+@media (min-width: 1440px) {
+
+    .container {
+        max-width: 900px;
+    }
+
+    .card {
+        padding: 36px;
+    }
+}
+
 .card {
     background: white;
     border-radius: 15px;
@@ -540,6 +551,43 @@ html.dark-mode #notificacao.notificacao.aviso::before {
     color: #451a03;
 }
 
+@media (max-width: 1439px) and (min-width: 1025px) {
+
+    .card {
+        padding: 28px;
+    }
+}
+
+@media (max-width: 1024px) {
+
+    body {
+        padding: 30px 16px;
+    }
+
+    .card {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    body {
+        padding: 24px 14px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    .modal-confirmacao {
+        padding: 26px;
+    }
+}
+
 @media (max-width: 600px) {
 
     #notificacao.notificacao {
@@ -570,5 +618,34 @@ html.dark-mode #notificacao.notificacao.aviso::before {
 
     .acoes-modal {
         flex-direction: column-reverse;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .card {
+        padding: 16px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .form-resposta {
+        flex-direction: column;
+    }
+
+    .form-resposta button {
+        width: 100%;
+    }
+
+    .modal-confirmacao {
+        padding: 18px;
+    }
+
+    .icone-modal-excluir {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
     }
 }

@@ -18,7 +18,8 @@ body {
 }
 
 .container {
-    width: 420px;
+    width: 90%;
+    max-width: 420px;
     background-color: transparent;
     border: 2px solid rgba(255, 255, 255, .2);
     border-radius: 20px;
@@ -132,4 +133,62 @@ body {
     text-align: center;
     font-size: 14px;
     color: #b00020;
+}
+
+@media (min-width: 1440px) {
+
+    .container {
+        max-width: 460px;
+    }
+
+    .container h1 {
+        font-size: 40px;
+    }
+}
+
+@media (max-width: 1439px) and (min-width: 1025px) {
+
+    .container {
+        padding: 28px 36px;
+    }
+}
+
+@media (max-width: 1024px) {
+
+    .container {
+        padding: 26px 32px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .container {
+        padding: 24px 28px;
+    }
+
+    .container h1 {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .container {
+        padding: 20px 22px;
+        border-radius: 16px;
+    }
+
+    .container h1 {
+        font-size: 26px;
+    }
+
+    .input-login,
+    .input-login input,
+    .botao-login {
+        height: 46px;
+    }
+
+    .logo {
+        top: 20px;
+    }
 }
