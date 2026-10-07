@@ -917,7 +917,9 @@ app.get('/reclamacoes', async (c) => {
 
         if (
             usuario.tipo_usuario ===
-            'ALUNO'
+                'ALUNO' ||
+            usuario.tipo_usuario ===
+                'PROFESSOR'
         ) {
 
             consulta =
