@@ -36,6 +36,16 @@ const botoesStatus =
         '.status-filtro-btn'
     );
 
+const filtrosStatus =
+    document.getElementById(
+        'filtrosStatus'
+    );
+
+const btnPendentes =
+    document.getElementById(
+        'btnPendentes'
+    );
+
 const tituloReservas =
     document.getElementById(
         'tituloReservas'
@@ -61,6 +71,15 @@ let reservasCarregadas =
     [];
 
 let tempoNotificacao;
+
+if (
+    usuario.tipo_usuario ===
+    'ADMINISTRADOR'
+) {
+
+    btnPendentes.style.display =
+        'inline-block';
+}
 
 function mostrarNotificacao(
     mensagem,
@@ -103,6 +122,20 @@ function atualizarTitulo() {
 
     if (
         filtroAtual ===
+        'pendentes'
+    ) {
+
+        tituloReservas.textContent =
+            'Reservas Pendentes';
+
+        descricaoReservas.textContent =
+            'Analise as solicitações que aguardam aprovação.';
+
+        return;
+    }
+
+    if (
+        filtroAtual ===
         'minhas'
     ) {
 
@@ -120,6 +153,25 @@ function atualizarTitulo() {
 
     descricaoReservas.textContent =
         'Consulte as reservas cadastradas no sistema.';
+}
+
+function atualizarFiltrosStatus() {
+
+    if (
+        filtroAtual ===
+            'minhas' &&
+        usuario.tipo_usuario ===
+            'ALUNO'
+    ) {
+
+        filtrosStatus.style.display =
+            'flex';
+
+        return;
+    }
+
+    filtrosStatus.style.display =
+        'none';
 }
 
 function mostrarCarregamento() {
@@ -204,8 +256,12 @@ function aplicarFiltroStatus() {
         reservasCarregadas.slice();
 
     if (
+        filtroAtual ===
+            'minhas' &&
+        usuario.tipo_usuario ===
+            'ALUNO' &&
         statusAtual !==
-        'TODAS'
+            'TODAS'
     ) {
 
         reservasFiltradas =
@@ -281,8 +337,21 @@ function renderizarReservas(
             'Não existem reservas para este filtro.';
 
         if (
+            filtroAtual ===
+            'pendentes'
+        ) {
+
+            mensagem =
+                'Não há reservas aguardando aprovação.';
+        }
+
+        if (
+            filtroAtual ===
+                'minhas' &&
+            usuario.tipo_usuario ===
+                'ALUNO' &&
             statusAtual ===
-            'APROVADA'
+                'APROVADA'
         ) {
 
             mensagem =
@@ -290,8 +359,12 @@ function renderizarReservas(
         }
 
         if (
+            filtroAtual ===
+                'minhas' &&
+            usuario.tipo_usuario ===
+                'ALUNO' &&
             statusAtual ===
-            'PENDENTE'
+                'PENDENTE'
         ) {
 
             mensagem =
@@ -299,8 +372,12 @@ function renderizarReservas(
         }
 
         if (
+            filtroAtual ===
+                'minhas' &&
+            usuario.tipo_usuario ===
+                'ALUNO' &&
             statusAtual ===
-            'CANCELADA'
+                'CANCELADA'
         ) {
 
             mensagem =
@@ -549,9 +626,126 @@ function criarCardIndividual(
 
     if (
         filtroAtual ===
-        'minhas' &&
+            'pendentes' &&
+        usuario.tipo_usuario ===
+            'ADMINISTRADOR' &&
+        reserva.status ===
+            'PENDENTE'
+    ) {
+
+        const acoes =
+            document.createElement(
+                'div'
+            );
+
+        acoes.className =
+            'acoes-admin';
+
+        const btnAprovar =
+            document.createElement(
+                'button'
+            );
+
+        btnAprovar.className =
+            'btn-aprovar';
+
+        btnAprovar.textContent =
+            'Aprovar';
+
+        btnAprovar.addEventListener(
+            'click',
+            () => {
+
+                abrirConfirmacao({
+                    titulo:
+                        'Aprovar reserva?',
+
+                    mensagem:
+                        'A reserva de ' +
+                        formatarData(
+                            reserva.data_reserva
+                        ) +
+                        ' será aprovada.',
+
+                    textoBotao:
+                        'Aprovar reserva',
+
+                    tipo:
+                        'aprovar',
+
+                    aoConfirmar:
+                        async () => {
+
+                            await atualizarStatus(
+                                reserva.id_reserva,
+                                'APROVADA'
+                            );
+                        }
+                });
+            }
+        );
+
+        const btnCancelar =
+            document.createElement(
+                'button'
+            );
+
+        btnCancelar.className =
+            'btn-cancelar';
+
+        btnCancelar.textContent =
+            'Cancelar';
+
+        btnCancelar.addEventListener(
+            'click',
+            () => {
+
+                abrirConfirmacao({
+                    titulo:
+                        'Cancelar solicitação?',
+
+                    mensagem:
+                        'A reserva pendente de ' +
+                        formatarData(
+                            reserva.data_reserva
+                        ) +
+                        ' será cancelada.',
+
+                    textoBotao:
+                        'Cancelar reserva',
+
+                    tipo:
+                        'cancelar',
+
+                    aoConfirmar:
+                        async () => {
+
+                            await atualizarStatus(
+                                reserva.id_reserva,
+                                'CANCELADA'
+                            );
+                        }
+                });
+            }
+        );
+
+        acoes.appendChild(
+            btnAprovar
+        );
+
+        acoes.appendChild(
+            btnCancelar
+        );
+
+        item.appendChild(
+            acoes
+        );
+
+    } else if (
+        filtroAtual ===
+            'minhas' &&
         reserva.status !==
-        'CANCELADA'
+            'CANCELADA'
     ) {
 
         const acoes =
@@ -1363,6 +1557,17 @@ async function atualizarStatus(
 
         if (
             novoStatus ===
+            'APROVADA'
+        ) {
+
+            mostrarNotificacao(
+                'Reserva aprovada com sucesso!',
+                'sucesso'
+            );
+        }
+
+        if (
+            novoStatus ===
             'CANCELADA'
         ) {
 
@@ -1430,6 +1635,8 @@ botoesFiltro.forEach(
 
                 atualizarTitulo();
 
+                atualizarFiltrosStatus();
+
                 carregarReservas();
             }
         );
@@ -1466,6 +1673,8 @@ botoesStatus.forEach(
 );
 
 atualizarTitulo();
+
+atualizarFiltrosStatus();
 
 carregarReservas();
 
