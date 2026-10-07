@@ -11,10 +11,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color:   #008550;
+    background-color: #008550;
     transition: background 0.3s;
 }
-
 
 .navbar {
     display: flex;
@@ -85,10 +84,183 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.iframe-container {   
-    width: 100%;
+.notificacoes-container {
+    position: relative;
 }
 
+.btn-notificacoes {
+    position: relative;
+}
+
+.contador-notificacoes {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background-color: #dc2626;
+    color: white;
+    border: 2px solid #008550;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.contador-notificacoes.visivel {
+    display: flex;
+}
+
+.painel-notificacoes {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: min(390px, 90vw);
+    max-height: 520px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    z-index: 900;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease,
+        transform 0.2s ease;
+}
+
+.painel-notificacoes.ativo {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.painel-notificacoes-cabecalho {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.painel-notificacoes-cabecalho h3 {
+    color: #111827;
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.painel-notificacoes-cabecalho p {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.lista-notificacoes {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.item-notificacao {
+    width: 100%;
+    display: block;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid #edf0f2;
+    background-color: #ffffff;
+    padding: 16px 20px;
+    cursor: default;
+    transition: background-color 0.2s;
+}
+
+.item-notificacao.nao-lida {
+    background-color: #ecfdf5;
+    cursor: pointer;
+}
+
+.item-notificacao.nao-lida:hover {
+    background-color: #d1fae5;
+}
+
+.notificacao-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 7px;
+}
+
+.notificacao-tipo {
+    color: #047857;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.notificacao-nova {
+    flex-shrink: 0;
+    background-color: #008550;
+    color: white;
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.item-notificacao p {
+    color: #374151;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.notificacao-data {
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.notificacoes-vazio,
+.notificacoes-carregando,
+.notificacoes-erro {
+    min-height: 190px;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.notificacoes-vazio i {
+    color: #9ca3af;
+    font-size: 28px;
+    margin-bottom: 12px;
+}
+
+.notificacoes-vazio strong {
+    color: #374151;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.lista-notificacoes::-webkit-scrollbar {
+    width: 7px;
+}
+
+.lista-notificacoes::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+
+.lista-notificacoes::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 8px;
+}
+
+.iframe-container {
+    width: 100%;
+}
 
 iframe {
     width: min(200vh, 95vw);
@@ -98,20 +270,17 @@ iframe {
 }
 
 .iframe::-webkit-scrollbar {
-  width: 10px;
+    width: 10px;
 }
 
 .iframe::-webkit-scrollbar-track {
-  background: #e8f1f2;
+    background: #e8f1f2;
 }
 
 .iframe::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 8px;
+    background: #888;
+    border-radius: 8px;
 }
-
-
-
 
 html.dark-mode body {
     background-color: #0f172a;
@@ -122,29 +291,84 @@ html.dark-mode .container {
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+html.dark-mode .contador-notificacoes {
+    border-color: #0f172a;
+}
 
+html.dark-mode .painel-notificacoes {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+}
+
+html.dark-mode .painel-notificacoes-cabecalho {
+    border-bottom-color: #334155;
+}
+
+html.dark-mode .painel-notificacoes-cabecalho h3 {
+    color: #f8fafc;
+}
+
+html.dark-mode .painel-notificacoes-cabecalho p {
+    color: #94a3b8;
+}
+
+html.dark-mode .item-notificacao {
+    background-color: #0f172a;
+    border-bottom-color: #334155;
+}
+
+html.dark-mode .item-notificacao.nao-lida {
+    background-color: #052e2b;
+}
+
+html.dark-mode .item-notificacao.nao-lida:hover {
+    background-color: #064e3b;
+}
+
+html.dark-mode .notificacao-tipo {
+    color: #6ee7b7;
+}
+
+html.dark-mode .item-notificacao p {
+    color: #e2e8f0;
+}
+
+html.dark-mode .notificacao-data {
+    color: #94a3b8;
+}
+
+html.dark-mode .notificacoes-vazio,
+html.dark-mode .notificacoes-carregando,
+html.dark-mode .notificacoes-erro {
+    color: #94a3b8;
+}
+
+html.dark-mode .notificacoes-vazio strong {
+    color: #e2e8f0;
+}
+
+html.dark-mode .lista-notificacoes::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+html.dark-mode .lista-notificacoes::-webkit-scrollbar-thumb {
+    background: #475569;
+}
 
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-
     width: 100%;
     height: 100%;
-
     background-color: rgba(0, 0, 0, 0.55);
-
     display: flex;
     justify-content: center;
     align-items: center;
-
     padding: clamp(12px, 2%, 20px);
-
     z-index: 1000;
-
     opacity: 0;
     visibility: hidden;
-
     transition:
         opacity 0.2s ease,
         visibility 0.2s ease;
@@ -158,19 +382,12 @@ html.dark-mode .container {
 .modal-sair {
     width: 100%;
     max-width: clamp(280px, 90%, 420px);
-
     background-color: white;
-
     border-radius: clamp(10px, 2%, 18px);
-
     padding: clamp(15px, 3%, 30px);
-
     text-align: center;
-
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
-
     transform: scale(0.95);
-
     transition:
         transform 0.2s ease,
         background-color 0.3s;
@@ -183,57 +400,42 @@ html.dark-mode .container {
 .modal-icone {
     width: clamp(48px, 8vw, 60px);
     height: clamp(48px, 8vw, 60px);
-
     margin: 0 auto clamp(8px, 1.5%, 15px);
-
     border-radius: 50%;
-
     background-color: #fee2e2;
     color: #dc2626;
-
     display: flex;
     justify-content: center;
     align-items: center;
-
     font-size: clamp(18px, 100%, 24px);
 }
 
 .modal-sair h2 {
     margin-bottom: clamp(4px, 1%, 8px);
-
     color: #111827;
-
     font-size: clamp(18px, 100%, 24px);
 }
 
 .modal-sair p {
     margin-bottom: clamp(12px, 2.5%, 25px);
-
     color: #6b7280;
-
     font-size: clamp(13px, 95%, 15px);
 }
 
 .modal-acoes {
     display: flex;
     justify-content: center;
-
     gap: clamp(6px, 1.2%, 12px);
 }
 
 .btn-modal {
     flex: 1;
-
     padding: clamp(8px, 1.2%, 12px) clamp(12px, 2%, 20px);
-
     border: none;
     border-radius: clamp(6px, 1%, 10px);
-
     cursor: pointer;
-
     font-size: clamp(13px, 95%, 15px);
     font-weight: 600;
-
     transition: 0.2s;
 }
 
@@ -254,8 +456,6 @@ html.dark-mode .container {
 .btn-confirmar:hover {
     background-color: #b91c1c;
 }
-
-
 
 html.dark-mode .modal-sair {
     background-color: #0f172a;
@@ -278,8 +478,6 @@ html.dark-mode .btn-cancelar:hover {
     background-color: #475569;
 }
 
-
-
 @media (max-width: 768px) {
     .navbar {
         flex-direction: column;
@@ -293,6 +491,10 @@ html.dark-mode .btn-cancelar:hover {
     iframe {
         width: 95vw;
         height: 75vh;
+    }
+
+    .painel-notificacoes {
+        right: -55px;
     }
 }
 
@@ -312,6 +514,11 @@ html.dark-mode .btn-cancelar:hover {
         font-size: 13px;
     }
 
+    .usuario-info {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     #boasVindas {
         font-size: 15px;
     }
@@ -328,5 +535,14 @@ html.dark-mode .btn-cancelar:hover {
         width: 95vw;
         height: 65vh;
         border-radius: 12px;
+    }
+
+    .painel-notificacoes {
+        position: fixed;
+        top: 75px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-height: 70vh;
     }
 }

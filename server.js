@@ -948,6 +948,259 @@ app.post('/reservas', async (c) => {
     }
 })
 
+app.get('/notificacoes', async (c) => {
+
+    try {
+
+        const idUsuario =
+            c.req.query('id_usuario')
+
+        if (!idUsuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
+        }
+
+        const {
+            data: usuario,
+            error: erroUsuario
+        } = await supabase
+            .from('usuario')
+            .select('id_usuario')
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .maybeSingle()
+
+        if (
+            erroUsuario ||
+            !usuario
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário não encontrado.'
+                },
+                404
+            )
+        }
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('notificacao')
+            .select(
+                'id_notificacao, mensagem, tipo, lida, data_envio, id_usuario'
+            )
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .order(
+                'data_envio',
+                {
+                    ascending:
+                        false
+                }
+            )
+
+        if (error) {
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível carregar as notificações.'
+                },
+                400
+            )
+        }
+
+        return c.json({
+            sucesso: true,
+            notificacoes:
+                data
+        })
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
+app.patch('/notificacoes/:id', async (c) => {
+
+    try {
+
+        const id =
+            c.req.param('id')
+
+        const body =
+            await c.req.json()
+
+        const idUsuario =
+            body.id_usuario
+
+        if (!idUsuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
+        }
+
+        const {
+            data: notificacao,
+            error: erroNotificacao
+        } = await supabase
+            .from('notificacao')
+            .select(
+                'id_notificacao, id_usuario, lida'
+            )
+            .eq(
+                'id_notificacao',
+                id
+            )
+            .maybeSingle()
+
+        if (
+            erroNotificacao ||
+            !notificacao
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Notificação não encontrada.'
+                },
+                404
+            )
+        }
+
+        const ehDono =
+            Number(
+                notificacao.id_usuario
+            ) ===
+            Number(
+                idUsuario
+            )
+
+        if (!ehDono) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Você não pode alterar esta notificação.'
+                },
+                403
+            )
+        }
+
+        if (notificacao.lida) {
+
+            return c.json({
+                sucesso: true,
+                notificacao:
+                    notificacao
+            })
+        }
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('notificacao')
+            .update({
+                lida:
+                    true
+            })
+            .eq(
+                'id_notificacao',
+                id
+            )
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .select(
+                'id_notificacao, mensagem, tipo, lida, data_envio, id_usuario'
+            )
+            .maybeSingle()
+
+        if (error) {
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível atualizar a notificação.'
+                },
+                400
+            )
+        }
+
+        if (!data) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'A notificação não foi atualizada.'
+                },
+                409
+            )
+        }
+
+        return c.json({
+            sucesso: true,
+            notificacao:
+                data
+        })
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
 app.post('/reclamacoes', async (c) => {
 
     try {

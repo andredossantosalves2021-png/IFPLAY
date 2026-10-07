@@ -18,7 +18,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
     <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="dashboard.css?v=2">
+    <link rel="stylesheet" href="dashboard.css?v=3">
 
 </head>
 
@@ -39,19 +39,62 @@
                     Reservas
                 </a>
 
-<a class="btn-action" href="../RECLAMACOES/reclamacoes.html" target="frame" id="btnReclamacoes">
-    Reclamações
-</a>
+                <a class="btn-action" href="../RECLAMACOES/reclamacoes.html" target="frame" id="btnReclamacoes">
+                    Reclamações
                 </a>
             </div>
 
             <div class="usuario-info">
+
+                <div class="notificacoes-container">
+
+                    <button
+                        id="btnNotificacoes"
+                        class="btn-icone btn-notificacoes"
+                        type="button"
+                        aria-label="Notificações"
+                        aria-expanded="false"
+                    >
+                        <i class="fa-solid fa-bell"></i>
+
+                        <span
+                            id="contadorNotificacoes"
+                            class="contador-notificacoes"
+                        >
+                            0
+                        </span>
+                    </button>
+
+                    <div
+                        id="painelNotificacoes"
+                        class="painel-notificacoes"
+                        aria-hidden="true"
+                    >
+                        <div class="painel-notificacoes-cabecalho">
+                            <div>
+                                <h3>Notificações</h3>
+                                <p>Acompanhe os avisos do IFPlay.</p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="listaNotificacoes"
+                            class="lista-notificacoes"
+                        >
+                            <div class="notificacoes-carregando">
+                                Carregando notificações...
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
                 <button id="btnTema" class="btn-icone">
                     <i class="fa-solid fa-moon"></i>
                 </button>
 
                 <h2 id="boasVindas">
-                    Bem-vindo, Andre!
+                    Bem-vindo!
                 </h2>
 
                 <button id="btnSair" class="btn-action">
@@ -69,8 +112,6 @@
             </iframe>
         </div>
     </main>
-
-
 
     <div
         id="modalSair"
@@ -119,8 +160,7 @@
         </div>
     </div>
 
-
-    <script src="dashboard.js"></script>
+    <script src="dashboard.js?v=3"></script>
 
 </body>
 
