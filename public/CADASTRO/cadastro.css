@@ -18,7 +18,7 @@ body {
     position: relative;
     z-index: 1;
     width: 420px;
-    background-color: #fff;   /* garante que a logo não "vaze" por trás */
+    background-color: #fff;
     border: 2px solid rgba(255, 255, 255, .2);
     border-radius: 20px;
     color: black;
@@ -123,4 +123,19 @@ body {
 }
 .cordois {
     color: #800000;
+}
+
+.tipo-cadastro {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.tipo-cadastro label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
 }

@@ -12,6 +12,8 @@
 
     <link rel="stylesheet" href="/CADASTRO/cadastro.css?v=2">
 
+    <link rel="icon" type="image/png" href="/LOGO/favicon.png">
+
     <title>IFPlay - Cadastro</title>
 </head>
 <body>
@@ -29,17 +31,46 @@
             </h1>
 
             <p class="subtitulo">Cadastro de Aluno</p>
+            <div class="tipo-cadastro">
+                <label>
+                    <input type="radio" name="tipoCadastro" value="ALUNO" checked>
+                    Sou aluno
+                </label>
+                <label>
+                    <input type="radio" name="tipoCadastro" value="PROFESSOR">
+                    Sou professor/servidor
+                </label>
+            </div>
 
-            <div class="input-cadastro">
+            <div class="input-cadastro" id="campoRa">
                 <input
                     type="text"
                     id="ra"
                     placeholder="Digite sua matrícula (RA)"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    required
                 >
                 <i class="bx bxs-id-card"></i>
+            </div>
+
+            <div class="input-cadastro">
+                <input
+                    type="text"
+                    id="nome"
+                    placeholder="Nome completo"
+                    required
+                >
+                <i class="bx bxs-user"></i>
+            </div>
+
+            <div class="input-cadastro">
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Seu e-mail"
+                    required
+                >
+                <i class="bx bxs-envelope"></i>
             </div>
 
             <div class="input-cadastro">

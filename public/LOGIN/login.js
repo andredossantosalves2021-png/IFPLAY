@@ -5,7 +5,7 @@ const mensagemLogin = document.getElementById('mensagemLogin');
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const ra = document.getElementById('ra').value;
+    const identificador = document.getElementById('identificador').value;
     const senha = document.getElementById('senha').value;
 
     mensagemLogin.textContent = '';
@@ -21,7 +21,7 @@ form.addEventListener('submit', async (e) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                ra,
+                identificador,
                 senha
             })
         });

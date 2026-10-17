@@ -22,17 +22,181 @@ const supabase = createClient(
     process.env.SUPABASE_KEY
 )
 
+app.post('/cadastro', async (c) => {
+
+    try {
+
+        const body = await c.req.json()
+        const { ra, senha, nome, email, tipoCadastro } = body
+
+        if (!senha || !nome || !email) {
+            return c.json({ sucesso: false, mensagem: 'Preencha todos os campos.' }, 400)
+        }
+
+        const ehAluno = tipoCadastro !== 'PROFESSOR'
+
+        if (ehAluno && !ra) {
+            return c.json({ sucesso: false, mensagem: 'Digite seu RA.' }, 400)
+        }
+
+        const raLimpo = ehAluno ? String(ra).trim() : null
+
+        if (ehAluno && !/^\d+$/.test(raLimpo)) {
+            return c.json({ sucesso: false, mensagem: 'O RA deve conter apenas números.' }, 400)
+        }
+
+        const nomeLimpo = String(nome).trim()
+        const emailLimpo = String(email).trim()
+
+        if (senha.length < 6) {
+            return c.json({ sucesso: false, mensagem: 'A senha precisa ter pelo menos 6 caracteres.' }, 400)
+        }
+
+        const senhaHash = await bcrypt.hash(senha, 10)
+
+        const { data, error } = await supabase
+            .from('usuario')
+            .insert([{
+                ra: raLimpo,
+                nome: nomeLimpo,
+                email: emailLimpo,
+                senha: senhaHash,
+                tipo_usuario: ehAluno ? 'ALUNO' : 'PROFESSOR',
+                status_cadastro: 'PENDENTE'
+            }])
+            .select()
+
+        if (error) {
+
+            console.error(error)
+
+            if (error.code === '23505') {
+                return c.json({ sucesso: false, mensagem: 'Esse RA ou e-mail já está cadastrado.' }, 409)
+            }
+
+            return c.json({ sucesso: false, mensagem: error.message }, 400)
+        }
+
+        return c.json({
+            sucesso: true,
+            mensagem: 'Cadastro enviado! Aguarde a aprovação de um administrador.'
+        })
+
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
+    }
+
+})
+
+app.get('/cadastros/pendentes', async (c) => {
+
+    try {
+
+        const idUsuarioAdmin = c.req.query('id_usuario_admin')
+
+        if (!idUsuarioAdmin) {
+            return c.json({ sucesso: false, mensagem: 'id_usuario_admin é obrigatório.' }, 400)
+        }
+
+        const { data: admin, error: erroAdmin } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', idUsuarioAdmin)
+            .maybeSingle()
+
+        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem ver os cadastros pendentes.' }, 403)
+        }
+
+        const { data, error } = await supabase
+            .from('usuario')
+            .select('id_usuario, ra, nome, email')
+            .eq('status_cadastro', 'PENDENTE')
+            .order('id_usuario', { ascending: true })
+
+        if (error) {
+            console.error(error)
+            return c.json({ sucesso: false, mensagem: error.message }, 400)
+        }
+
+        return c.json({ sucesso: true, cadastros: data })
+
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
+    }
+
+})
+
+app.patch('/cadastros/:id', async (c) => {
+
+    try {
+
+        const id = c.req.param('id')
+        const body = await c.req.json()
+        const { novoStatus, id_usuario_admin, tipoUsuario } = body
+
+        if (!['APROVADO', 'REJEITADO'].includes(novoStatus)) {
+            return c.json({ sucesso: false, mensagem: 'Status inválido.' }, 400)
+        }
+
+        const { data: admin, error: erroAdmin } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq('id_usuario', id_usuario_admin)
+            .maybeSingle()
+
+        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem aprovar cadastros.' }, 403)
+        }
+
+        const atualizacao = { status_cadastro: novoStatus }
+
+        if (novoStatus === 'APROVADO') {
+
+            if (!['ALUNO', 'PROFESSOR', 'ADMINISTRADOR'].includes(tipoUsuario)) {
+                return c.json({ sucesso: false, mensagem: 'Selecione um tipo de usuário válido.' }, 400)
+            }
+
+            atualizacao.tipo_usuario = tipoUsuario
+
+        }
+
+        const { data, error } = await supabase
+            .from('usuario')
+            .update(atualizacao)
+            .eq('id_usuario', id)
+            .select()
+
+        if (error) {
+            console.error(error)
+            return c.json({ sucesso: false, mensagem: error.message }, 400)
+        }
+
+        return c.json({ sucesso: true, usuario: data[0] })
+
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
+    }
+
+})
+
 app.post('/login', async (c) => {
 
     try {
 
         const body = await c.req.json()
 
-        const raFornecido =
-            String(body.ra).trim()
+        const identificador =
+            String(body.identificador).trim()
 
         const senhaFornecida =
             String(body.senha).trim()
+
+        const ehEmail =
+            identificador.includes('@')
 
         const {
             data: usuario,
@@ -40,7 +204,10 @@ app.post('/login', async (c) => {
         } = await supabase
             .from('usuario')
             .select('*')
-            .eq('ra', raFornecido)
+            .eq(
+                ehEmail ? 'email' : 'ra',
+                identificador
+            )
             .maybeSingle()
 
         if (error) {
@@ -87,6 +254,28 @@ app.post('/login', async (c) => {
                         'RA ou senha inválidos'
                 },
                 401
+            )
+        }
+
+                if (usuario.status_cadastro === 'PENDENTE') {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem: 'Seu cadastro ainda está aguardando aprovação de um administrador.'
+                },
+                403
+            )
+        }
+
+        if (usuario.status_cadastro === 'REJEITADO') {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem: 'Seu cadastro foi recusado. Procure a coordenação.'
+                },
+                403
             )
         }
 

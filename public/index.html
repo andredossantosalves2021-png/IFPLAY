@@ -1,68 +1,72 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet"
-          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+        <link rel="stylesheet"
+            href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
 
-    <link rel="stylesheet"
-          href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+        <link rel="stylesheet"
+            href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
 
-    <link rel="stylesheet" href="/LOGIN/login.css">
+        <link rel="stylesheet" href="/LOGIN/login.css">
 
-    <title>IFPlay</title>
-</head>
-<body>
+        <link rel="icon" type="image/png" href="/LOGO/favicon.png">
 
-    <div class="logo">
-        <img src="/LOGO/logoifplaynova.png" alt="Logo IFPlay">
-    </div>
+        <title>IFPlay</title>
+    </head>
+    <body>
 
-    <main class="container">
-        <form id="loginForm">
+        <div class="logo">
+            <img src="/LOGO/logoifplaynova.png" alt="Logo IFPlay">
+        </div>
 
-            <h1>
-                Login
-                <span class="corum">IF</span><span class="cordois">play</span>
-            </h1>
 
-            <div class="input-login">
-                <input
-                    type="text"
-                    id="ra"
-                    placeholder="Digite sua matrícula"
-                    required
-                >
-                <i class="bx bxs-user"></i>
-            </div>
+        <main class="container">
 
-            <div class="input-login">
-                <input
-                    type="password"
-                    id="senha"
-                    placeholder="Digite sua senha"
-                    required
-                >
-                <i class="bx bxs-lock-alt"></i>
-            </div>
+            <form id="loginForm">
+                <h1>
+                    Login
+                    <span class="corum">IF</span><span class="cordois">play</span>
+                </h1>
 
-            <p id="mensagemLogin" class="mensagem-login"></p>
+                <div class="input-login">
+                    <input
+                        type="text"
+                        id="identificador"
+                        placeholder="Matrícula (RA) ou e-mail institucional"
+                        required
+                    >
+                    <i class="bx bxs-user"></i>
+                </div>
 
-            <button type="submit" class="botao-login">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                Entrar
-            </button>
+                <div class="input-login">
+                    <input
+                        type="password"
+                        id="senha"
+                        placeholder="Digite sua senha"
+                        required
+                    >
+                    <i class="bx bxs-lock-alt"></i>
+                </div>
+                
+                <p id="mensagemLogin" class="mensagem-login"></p>
 
+                <button type="submit" class="botao-login">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Entrar
+                </button>
+
+            </form>
+            
             <a href="/CADASTRO/cadastro.html" class="link-cadastro">
                 Não tem conta? <strong>Cadastre-se</strong>
             </a>
 
-        </form>
-    </main>
+        </main>
 
-    <script src="/LOGIN/login.js"></script>
+        <script src="/LOGIN/login.js"></script>
 
-</body>
+    </body>
 </html>

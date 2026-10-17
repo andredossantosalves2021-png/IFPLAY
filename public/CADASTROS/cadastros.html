@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastros Pendentes</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+            document.documentElement.className = isDark ? 'dark-mode' : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="cadastros.css">
+
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h1>Cadastros Pendentes</h1>
+            <div id="listaCadastros"></div>
+        </div>
+    </div>
+
+    <script src="cadastros.js"></script>
+
+</body>
+
+</html>

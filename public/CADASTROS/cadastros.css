@@ -1,0 +1,89 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f3f4f6;
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+}
+
+.cadastro-item {
+    background: #f9fafb;
+    padding: 18px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border-left: 5px solid #eab308;
+}
+
+.cadastro-item p {
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.acoes-cadastro {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-aprovar,
+.btn-rejeitar {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+}
+
+.btn-aprovar {
+    background: #22c55e;
+}
+
+.btn-rejeitar {
+    background: #ef4444;
+}
+
+.select-tipo {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-top: 8px;
+}
+
+html.dark-mode body {
+    background: #1e293b;
+}
+
+html.dark-mode .card,
+html.dark-mode .cadastro-item {
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+html.dark-mode .cadastro-item p {
+    color: #94a3b8;
+}
+
+html.dark-mode h1 {
+    color: #38bdf8;
+}

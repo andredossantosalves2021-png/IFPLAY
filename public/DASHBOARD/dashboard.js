@@ -10,9 +10,14 @@ document.getElementById('boasVindas').textContent =
     `Bem-vindo, ${usuario.nome}!`;
 
 
+if (usuario.tipo_usuario === 'ADMINISTRADOR') {
+    document.getElementById('linkCadastros').style.display = '';
+}
+
+
 const btnReclamacoes = document.getElementById('btnReclamacoes');
 
-// Todo mundo pode fazer reclamação (aluno vê só as próprias, admin/servidor vê todas)
+
 if (btnReclamacoes) {
     btnReclamacoes.style.display = 'inline-block';
 }
