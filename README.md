@@ -135,10 +135,15 @@ Após criar o projeto no Supabase, execute os scripts SQL disponibilizados pela 
 * RA: 123456
 * Senha: 123
 
-**Servidor**
+**Administrador**
 
 * RA: arthurluiz@gmail.com
 * Senha: 6742
+
+**Professor/Servidor**
+
+* RA: 987654
+* Senha: 123456
 
 ## Integrantes
 

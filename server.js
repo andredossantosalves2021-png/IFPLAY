@@ -662,6 +662,30 @@ function horarioParaMinutos(horario) {
     )
 }
 
+function formatarDataBrasileira(data) {
+
+    const partes =
+        String(data).split('-')
+
+    if (partes.length !== 3) {
+        return data
+    }
+
+    return (
+        partes[2] +
+        '/' +
+        partes[1] +
+        '/' +
+        partes[0]
+    )
+}
+
+function formatarHorario(horario) {
+
+    return String(horario)
+        .slice(0, 5)
+}
+
 app.post('/reservas', async (c) => {
 
     try {
@@ -699,12 +723,39 @@ app.post('/reservas', async (c) => {
         }
 
         const {
+            data: criador,
+            error: erroCriador
+        } = await supabase
+            .from('usuario')
+            .select('tipo_usuario')
+            .eq(
+                'id_usuario',
+                id_usuario
+            )
+            .maybeSingle()
+
+        if (
+            erroCriador ||
+            !criador
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário inválido.'
+                },
+                400
+            )
+        }
+
+        const {
             data: reservasDoDia,
             error: erroConflito
         } = await supabase
             .from('reserva')
             .select(
-                'id_reserva, horario_inicio, horario_fim, status'
+                'id_reserva, horario_inicio, horario_fim, status, id_usuario, usuario(tipo_usuario)'
             )
             .eq(
                 'data_reserva',
@@ -742,8 +793,8 @@ app.post('/reservas', async (c) => {
                 horario_fim
             )
 
-        const existeConflito =
-            reservasDoDia.some(
+        const reservasConflitantes =
+            reservasDoDia.filter(
                 function (reservaExistente) {
 
                     const inicioExistente =
@@ -765,43 +816,56 @@ app.post('/reservas', async (c) => {
                 }
             )
 
-        if (existeConflito) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Este horário já possui uma reserva. Escolha outro período.'
-                },
-                409
-            )
-        }
-
-        const {
-            data: criador,
-            error: erroCriador
-        } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq(
-                'id_usuario',
-                id_usuario
-            )
-            .maybeSingle()
+        const possuiPrioridade =
+            criador.tipo_usuario ===
+                'PROFESSOR' ||
+            criador.tipo_usuario ===
+                'ADMINISTRADOR'
 
         if (
-            erroCriador ||
-            !criador
+            reservasConflitantes.length >
+            0
         ) {
 
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário inválido.'
-                },
-                400
-            )
+            if (!possuiPrioridade) {
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'Este horário já possui uma reserva. Escolha outro período.'
+                    },
+                    409
+                )
+            }
+
+            const existeConflitoPrioritario =
+                reservasConflitantes.some(
+                    function (
+                        reservaExistente
+                    ) {
+
+                        return (
+                            !reservaExistente.usuario ||
+                            reservaExistente.usuario.tipo_usuario !==
+                                'ALUNO'
+                        )
+                    }
+                )
+
+            if (
+                existeConflitoPrioritario
+            ) {
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'Este horário já possui uma reserva de professor ou administrador.'
+                    },
+                    409
+                )
+            }
         }
 
         const status =
@@ -810,9 +874,70 @@ app.post('/reservas', async (c) => {
                 ? 'PENDENTE'
                 : 'APROVADA'
 
+        const reservasParaRestaurar =
+            reservasConflitantes.map(
+                function (reserva) {
+
+                    return {
+                        id_reserva:
+                            reserva.id_reserva,
+
+                        status:
+                            reserva.status,
+
+                        id_usuario:
+                            reserva.id_usuario
+                    }
+                }
+            )
+
+        if (
+            possuiPrioridade &&
+            reservasParaRestaurar.length >
+                0
+        ) {
+
+            const idsReservasAlunos =
+                reservasParaRestaurar.map(
+                    function (reserva) {
+                        return reserva.id_reserva
+                    }
+                )
+
+            const {
+                error: erroCancelamento
+            } = await supabase
+                .from('reserva')
+                .update({
+                    status:
+                        'CANCELADA'
+                })
+                .in(
+                    'id_reserva',
+                    idsReservasAlunos
+                )
+
+            if (erroCancelamento) {
+
+                console.error(
+                    'Erro ao cancelar reservas dos alunos:',
+                    erroCancelamento
+                )
+
+                return c.json(
+                    {
+                        sucesso: false,
+                        mensagem:
+                            'Não foi possível aplicar a prioridade da reserva.'
+                    },
+                    500
+                )
+            }
+        }
+
         const {
-            data,
-            error
+            data: novaReserva,
+            error: erroNovaReserva
         } = await supabase
             .from('reserva')
             .insert([
@@ -847,13 +972,51 @@ app.post('/reservas', async (c) => {
                 }
             ])
             .select()
+            .maybeSingle()
 
-        if (error) {
+        if (erroNovaReserva) {
 
-            console.error(error)
+            console.error(
+                erroNovaReserva
+            )
 
             if (
-                error.code ===
+                reservasParaRestaurar.length >
+                0
+            ) {
+
+                for (
+                    const reservaOriginal
+                    of reservasParaRestaurar
+                ) {
+
+                    const {
+                        error:
+                            erroRestauracao
+                    } = await supabase
+                        .from('reserva')
+                        .update({
+                            status:
+                                reservaOriginal.status
+                        })
+                        .eq(
+                            'id_reserva',
+                            reservaOriginal.id_reserva
+                        )
+
+                    if (erroRestauracao) {
+
+                        console.error(
+                            'Erro ao restaurar reserva:',
+                            reservaOriginal.id_reserva,
+                            erroRestauracao
+                        )
+                    }
+                }
+            }
+
+            if (
+                erroNovaReserva.code ===
                 '23505'
             ) {
 
@@ -871,7 +1034,184 @@ app.post('/reservas', async (c) => {
                 {
                     sucesso: false,
                     mensagem:
-                        error.message
+                        erroNovaReserva.message
+                },
+                400
+            )
+        }
+
+        if (
+            possuiPrioridade &&
+            reservasParaRestaurar.length >
+                0
+        ) {
+
+            const usuariosNotificados =
+                [
+                    ...new Set(
+                        reservasParaRestaurar.map(
+                            function (
+                                reserva
+                            ) {
+
+                                return Number(
+                                    reserva.id_usuario
+                                )
+                            }
+                        )
+                    )
+                ]
+
+            const mensagem =
+                'Sua reserva de ' +
+                formatarDataBrasileira(
+                    data_reserva
+                ) +
+                ', das ' +
+                formatarHorario(
+                    horario_inicio
+                ) +
+                ' às ' +
+                formatarHorario(
+                    horario_fim
+                ) +
+                ', foi cancelada devido à prioridade de uma reserva institucional.'
+
+            const notificacoes =
+                usuariosNotificados.map(
+                    function (
+                        idUsuarioAluno
+                    ) {
+
+                        return {
+                            mensagem:
+                                mensagem,
+
+                            tipo:
+                                'RESERVA_CANCELADA',
+
+                            lida:
+                                false,
+
+                            id_usuario:
+                                idUsuarioAluno
+                        }
+                    }
+                )
+
+            const {
+                error: erroNotificacao
+            } = await supabase
+                .from('notificacao')
+                .insert(
+                    notificacoes
+                )
+
+            if (erroNotificacao) {
+
+                console.error(
+                    'Erro ao criar notificações:',
+                    erroNotificacao
+                )
+            }
+        }
+
+        return c.json({
+            sucesso: true,
+            reserva:
+                novaReserva
+        })
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
+app.get('/notificacoes', async (c) => {
+
+    try {
+
+        const idUsuario =
+            c.req.query('id_usuario')
+
+        if (!idUsuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
+        }
+
+        const {
+            data: usuario,
+            error: erroUsuario
+        } = await supabase
+            .from('usuario')
+            .select('id_usuario')
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .maybeSingle()
+
+        if (
+            erroUsuario ||
+            !usuario
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Usuário não encontrado.'
+                },
+                404
+            )
+        }
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('notificacao')
+            .select(
+                'id_notificacao, mensagem, tipo, lida, data_envio, id_usuario'
+            )
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .order(
+                'data_envio',
+                {
+                    ascending:
+                        false
+                }
+            )
+
+        if (error) {
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível carregar as notificações.'
                 },
                 400
             )
@@ -879,7 +1219,160 @@ app.post('/reservas', async (c) => {
 
         return c.json({
             sucesso: true,
-            reserva: data[0]
+            notificacoes:
+                data
+        })
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        return c.json(
+            {
+                sucesso: false,
+                mensagem:
+                    'Erro interno do servidor.'
+            },
+            500
+        )
+    }
+})
+
+app.patch('/notificacoes/:id', async (c) => {
+
+    try {
+
+        const id =
+            c.req.param('id')
+
+        const body =
+            await c.req.json()
+
+        const idUsuario =
+            body.id_usuario
+
+        if (!idUsuario) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'ID do usuário é obrigatório.'
+                },
+                400
+            )
+        }
+
+        const {
+            data: notificacao,
+            error: erroNotificacao
+        } = await supabase
+            .from('notificacao')
+            .select(
+                'id_notificacao, id_usuario, lida'
+            )
+            .eq(
+                'id_notificacao',
+                id
+            )
+            .maybeSingle()
+
+        if (
+            erroNotificacao ||
+            !notificacao
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Notificação não encontrada.'
+                },
+                404
+            )
+        }
+
+        const ehDono =
+            Number(
+                notificacao.id_usuario
+            ) ===
+            Number(
+                idUsuario
+            )
+
+        if (!ehDono) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Você não pode alterar esta notificação.'
+                },
+                403
+            )
+        }
+
+        if (notificacao.lida) {
+
+            return c.json({
+                sucesso: true,
+                notificacao:
+                    notificacao
+            })
+        }
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('notificacao')
+            .update({
+                lida:
+                    true
+            })
+            .eq(
+                'id_notificacao',
+                id
+            )
+            .eq(
+                'id_usuario',
+                idUsuario
+            )
+            .select(
+                'id_notificacao, mensagem, tipo, lida, data_envio, id_usuario'
+            )
+            .maybeSingle()
+
+        if (error) {
+
+            console.error(error)
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Não foi possível atualizar a notificação.'
+                },
+                400
+            )
+        }
+
+        if (!data) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'A notificação não foi atualizada.'
+                },
+                409
+            )
+        }
+
+        return c.json({
+            sucesso: true,
+            notificacao:
+                data
         })
 
     } catch (erro) {
@@ -1106,7 +1599,9 @@ app.get('/reclamacoes', async (c) => {
 
         if (
             usuario.tipo_usuario ===
-            'ALUNO'
+                'ALUNO' ||
+            usuario.tipo_usuario ===
+                'PROFESSOR'
         ) {
 
             consulta =
