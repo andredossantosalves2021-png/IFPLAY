@@ -90,7 +90,7 @@ async function carregarReservas() {
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reservas?filtro=calendario'
+                '/reservas?filtro=calendario'
             );
 
         const resultado =
@@ -1057,7 +1057,7 @@ async function atualizarStatus(
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reservas/' +
+                '/reservas/' +
                 idReserva,
                 {
                     method:

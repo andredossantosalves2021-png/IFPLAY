@@ -2,7 +2,7 @@ const usuario =
     JSON.parse(localStorage.getItem('usuario'));
 
 if (!usuario) {
-    window.location.href = '../LOGIN/index.html';
+    window.location.href = '../index.html';
 }
 
 if (localStorage.getItem('tema') === 'true') {
@@ -249,7 +249,7 @@ btnConfirmarExclusao.addEventListener(
 
             const resposta =
                 await fetch(
-                    'http://localhost:3333/reclamacoes/' +
+                    '/reclamacoes/' +
                     id +
                     '?id_usuario=' +
                     usuario.id_usuario,
@@ -309,7 +309,7 @@ async function carregarReclamacoes() {
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reclamacoes?id_usuario=' +
+                '/reclamacoes?id_usuario=' +
                 usuario.id_usuario
             );
 
@@ -641,7 +641,7 @@ async function responder(
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reclamacoes/' +
+                '/reclamacoes/' +
                 idReclamacao,
                 {
                     method: 'PATCH',
@@ -737,7 +737,7 @@ formReclamacao.addEventListener(
 
             const resposta =
                 await fetch(
-                    'http://localhost:3333/reclamacoes',
+                    '/reclamacoes',
                     {
                         method: 'POST',
                         body: dadosForm
