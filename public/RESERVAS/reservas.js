@@ -8,7 +8,7 @@ const usuario =
 if (!usuario) {
 
     window.location.href =
-        '../LOGIN/index.html';
+        '../index.html';
 }
 
 if (
@@ -202,7 +202,7 @@ async function carregarReservas() {
     try {
 
         let url =
-            'http://localhost:3333/reservas?filtro=' +
+            '/reservas?filtro=' +
             filtroAtual;
 
         if (
@@ -1517,7 +1517,7 @@ async function atualizarStatus(
 
         const resposta =
             await fetch(
-                'http://localhost:3333/reservas/' +
+                '/reservas/' +
                 idReserva,
                 {
                     method:

@@ -5,7 +5,7 @@ const usuario =
 
 if (!usuario) {
     window.location.href =
-        '../LOGIN/index.html';
+        '../index.html';
 }
 
 if (
@@ -928,7 +928,7 @@ formReserva.addEventListener(
 
                     const resposta =
                         await fetch(
-                            'http://localhost:3333/reservas',
+                            '/reservas',
                             {
                                 method:
                                     'POST',
@@ -1042,7 +1042,7 @@ formReserva.addEventListener(
 
             const resposta =
                 await fetch(
-                    'http://localhost:3333/reservas',
+                    '/reservas',
                     {
                         method:
                             'POST',

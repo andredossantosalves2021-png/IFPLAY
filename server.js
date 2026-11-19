@@ -1,14 +1,36 @@
 import 'dotenv/config'
 import { Hono } from 'hono'
-import { cors } from 'hono/cors'
 import { createClient } from '@supabase/supabase-js'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import bcrypt from 'bcryptjs'
+import { randomBytes, createHash } from 'node:crypto'
+import { setCookie, getCookie, deleteCookie } from 'hono/cookie'
 
 const app = new Hono()
 
-app.use('*', cors())
+app.use('*', async (c, next) => {
+    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(c.req.method)) {
+        const origem = c.req.header('origin')
+        const destino = new URL(c.req.url)
+
+        if (origem) {
+            let origemUrl
+
+            try {
+                origemUrl = new URL(origem)
+            } catch {
+                return c.json({ sucesso: false, mensagem: 'Origem inválida.' }, 403)
+            }
+
+            if (origemUrl.host !== destino.host || !['http:', 'https:'].includes(origemUrl.protocol)) {
+                return c.json({ sucesso: false, mensagem: 'Origem não permitida.' }, 403)
+            }
+        }
+    }
+
+    await next()
+})
 
 app.use(
     '/*',
@@ -17,10 +39,112 @@ app.use(
     })
 )
 
-const supabase = createClient(
+const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
+    process.env.SUPABASE_SERVICE_KEY,
+    {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    }
 )
+
+async function obterUsuarioAutenticado(c) {
+    const token = getCookie(c, 'ifplay_sessao')
+
+    if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+        return null
+    }
+
+    const tokenHash = createHash('sha256')
+        .update(token)
+        .digest('hex')
+
+    const { data: sessao, error: erroSessao } = await supabaseAdmin
+        .from('sessoes')
+        .select('id_usuario, expira_em')
+        .eq('token_hash', tokenHash)
+        .gt('expira_em', new Date().toISOString())
+        .maybeSingle()
+
+    if (erroSessao || !sessao) {
+        return null
+    }
+
+    const { data: usuario, error: erroUsuario } = await supabaseAdmin
+        .from('usuario')
+        .select('id_usuario, ra, nome, email, tipo_usuario, status_cadastro')
+        .eq('id_usuario', sessao.id_usuario)
+        .maybeSingle()
+
+    if (erroUsuario || !usuario) {
+        return null
+    }
+
+    if (usuario.status_cadastro !== 'APROVADO') {
+        return null
+    }
+
+    return usuario
+}
+
+app.get('/minha-sessao', async (c) => {
+    try {
+        const usuario = await obterUsuarioAutenticado(c)
+
+        if (!usuario) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Sessão inválida ou expirada.'
+            }, 401)
+        }
+
+        return c.json({
+            sucesso: true,
+            usuario: {
+                id_usuario: usuario.id_usuario,
+                nome: usuario.nome,
+                tipo_usuario: usuario.tipo_usuario
+            }
+        })
+    } catch (erro) {
+        console.error('Erro ao validar sessão:', erro.message)
+
+        return c.json({
+            sucesso: false,
+            mensagem: 'Erro ao verificar a sessão.'
+        }, 500)
+    }
+})
+
+app.post('/logout', async (c) => {
+    try {
+        const token = getCookie(c, 'ifplay_sessao')
+
+        if (token && /^[a-f0-9]{64}$/.test(token)) {
+            const tokenHash = createHash('sha256')
+                .update(token)
+                .digest('hex')
+
+            const { error } = await supabaseAdmin
+                .from('sessoes')
+                .delete()
+                .eq('token_hash', tokenHash)
+
+            if (error) {
+                console.error('Erro ao encerrar sessão:', error.message)
+                return c.json({ sucesso: false, mensagem: 'Não foi possível encerrar a sessão.' }, 500)
+            }
+        }
+
+        deleteCookie(c, 'ifplay_sessao', { path: '/' })
+        return c.json({ sucesso: true })
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro ao encerrar a sessão.' }, 500)
+    }
+})
 
 app.post('/cadastro', async (c) => {
 
@@ -54,7 +178,7 @@ app.post('/cadastro', async (c) => {
 
         const senhaHash = await bcrypt.hash(senha, 10)
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('usuario')
             .insert([{
                 ra: raLimpo,
@@ -64,7 +188,7 @@ app.post('/cadastro', async (c) => {
                 tipo_usuario: ehAluno ? 'ALUNO' : 'PROFESSOR',
                 status_cadastro: 'PENDENTE'
             }])
-            .select()
+            .select('id_usuario')
 
         if (error) {
 
@@ -93,23 +217,24 @@ app.get('/cadastros/pendentes', async (c) => {
 
     try {
 
-        const idUsuarioAdmin = c.req.query('id_usuario_admin')
 
-        if (!idUsuarioAdmin) {
-            return c.json({ sucesso: false, mensagem: 'id_usuario_admin é obrigatório.' }, 400)
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'É necessário fazer login.'
+            }, 401)
         }
 
-        const { data: admin, error: erroAdmin } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq('id_usuario', idUsuarioAdmin)
-            .maybeSingle()
-
-        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
-            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem ver os cadastros pendentes.' }, 403)
+        if (usuarioAutenticado.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Apenas administradores podem ver os cadastros pendentes.'
+            }, 403)
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('usuario')
             .select('id_usuario, ra, nome, email')
             .eq('status_cadastro', 'PENDENTE')
@@ -133,22 +258,28 @@ app.patch('/cadastros/:id', async (c) => {
 
     try {
 
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'É necessário fazer login.'
+            }, 401)
+        }
+
+        if (usuarioAutenticado.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Apenas administradores podem aprovar cadastros.'
+            }, 403)
+        }
+
         const id = c.req.param('id')
         const body = await c.req.json()
-        const { novoStatus, id_usuario_admin, tipoUsuario } = body
+        const { novoStatus, tipoUsuario } = body
 
         if (!['APROVADO', 'REJEITADO'].includes(novoStatus)) {
             return c.json({ sucesso: false, mensagem: 'Status inválido.' }, 400)
-        }
-
-        const { data: admin, error: erroAdmin } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq('id_usuario', id_usuario_admin)
-            .maybeSingle()
-
-        if (erroAdmin || !admin || admin.tipo_usuario !== 'ADMINISTRADOR') {
-            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem aprovar cadastros.' }, 403)
         }
 
         const atualizacao = { status_cadastro: novoStatus }
@@ -163,11 +294,11 @@ app.patch('/cadastros/:id', async (c) => {
 
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('usuario')
             .update(atualizacao)
             .eq('id_usuario', id)
-            .select()
+            .select('id_usuario, ra, nome, email, tipo_usuario, status_cadastro')
 
         if (error) {
             console.error(error)
@@ -190,10 +321,14 @@ app.post('/login', async (c) => {
         const body = await c.req.json()
 
         const identificador =
-            String(body.identificador).trim()
+            String(body.identificador || '').trim()
 
         const senhaFornecida =
-            String(body.senha).trim()
+            String(body.senha || '')
+
+        if (!identificador || !senhaFornecida) {
+            return c.json({ sucesso: false, mensagem: 'Informe o RA ou e-mail e a senha.' }, 400)
+        }
 
         const ehEmail =
             identificador.includes('@')
@@ -201,7 +336,7 @@ app.post('/login', async (c) => {
         const {
             data: usuario,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('usuario')
             .select('*')
             .eq(
@@ -279,6 +414,41 @@ app.post('/login', async (c) => {
             )
         }
 
+const tokenSessao = randomBytes(32).toString('hex')
+
+        const hashSessao = createHash('sha256')
+            .update(tokenSessao)
+            .digest('hex')
+
+        const expiraEm = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString()
+
+        const { error: erroSessao } = await supabaseAdmin
+            .from('sessoes')
+            .insert({
+                id_usuario: usuario.id_usuario,
+                token_hash: hashSessao,
+                expira_em: expiraEm
+            })
+
+        if (erroSessao) {
+            console.error('Erro ao criar sessão:', erroSessao.message)
+
+            return c.json({
+                sucesso: false,
+                mensagem: 'Não foi possível iniciar sua sessão.'
+            }, 500)
+        }
+
+        setCookie(c, 'ifplay_sessao', tokenSessao, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Lax',
+            path: '/',
+            maxAge: 24 * 60 * 60
+        })
+
         return c.json({
             sucesso: true,
 
@@ -316,13 +486,22 @@ app.post('/login', async (c) => {
 app.get('/reservas', async (c) => {
 
     try {
+        
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'É necessário fazer login.'
+            }, 401)
+        }
 
         const filtro =
             c.req.query('filtro') ||
             'geral'
 
         const idUsuario =
-            c.req.query('id_usuario')
+            usuarioAutenticado.id_usuario
 
         const agora =
             new Date()
@@ -358,7 +537,7 @@ app.get('/reservas', async (c) => {
             ')'
 
         let query =
-            supabase
+            supabaseAdmin
                 .from('reserva')
                 .select(
                     '*, usuario ( nome )'
@@ -400,6 +579,10 @@ app.get('/reservas', async (c) => {
         } else if (
             filtro === 'pendentes'
         ) {
+
+            if (usuarioAutenticado.tipo_usuario !== 'ADMINISTRADOR') {
+                return c.json({ sucesso: false, mensagem: 'Apenas administradores podem ver reservas pendentes.' }, 403)
+            }
 
             query =
                 query.eq(
@@ -472,6 +655,20 @@ app.patch('/reservas/:id', async (c) => {
 
     try {
 
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'É necessário fazer login.'
+                },
+                401
+            )
+        }
+
         const id =
             c.req.param('id')
 
@@ -479,8 +676,7 @@ app.patch('/reservas/:id', async (c) => {
             await c.req.json()
 
         const {
-            novoStatus,
-            id_usuario_acao
+            novoStatus
         } = body
 
         if (
@@ -503,7 +699,7 @@ app.patch('/reservas/:id', async (c) => {
         const {
             data: reserva,
             error: erroReserva
-        } = await supabase
+        } = await supabaseAdmin
             .from('reserva')
             .select('id_usuario')
             .eq('id_reserva', id)
@@ -524,35 +720,8 @@ app.patch('/reservas/:id', async (c) => {
             )
         }
 
-        const {
-            data: usuarioAcao,
-            error: erroUsuario
-        } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq(
-                'id_usuario',
-                id_usuario_acao
-            )
-            .maybeSingle()
-
-        if (
-            erroUsuario ||
-            !usuarioAcao
-        ) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário inválido.'
-                },
-                400
-            )
-        }
-
         const ehAdmin =
-            usuarioAcao.tipo_usuario ===
+            usuarioAutenticado.tipo_usuario ===
             'ADMINISTRADOR'
 
         const ehDono =
@@ -560,7 +729,7 @@ app.patch('/reservas/:id', async (c) => {
                 reserva.id_usuario
             ) ===
             Number(
-                id_usuario_acao
+                usuarioAutenticado.id_usuario
             )
 
         if (
@@ -599,7 +768,7 @@ app.patch('/reservas/:id', async (c) => {
         const {
             data,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('reserva')
             .update({
                 status:
@@ -690,6 +859,23 @@ app.post('/reservas', async (c) => {
 
     try {
 
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'É necessário fazer login.'
+                },
+                401
+            )
+        }
+
+        const id_usuario =
+            usuarioAutenticado.id_usuario
+
         const body =
             await c.req.json()
 
@@ -700,7 +886,6 @@ app.post('/reservas', async (c) => {
             modalidade,
             tipo_reserva,
             recorrente,
-            id_usuario,
             id_recorrencia
         } = body
 
@@ -722,10 +907,19 @@ app.post('/reservas', async (c) => {
             )
         }
 
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(String(data_reserva)) ||
+            !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(String(horario_inicio)) ||
+            !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(String(horario_fim)) ||
+            horarioParaMinutos(horario_inicio) >= horarioParaMinutos(horario_fim)
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Data ou horário inválido.' }, 400)
+        }
+
         const {
             data: criador,
             error: erroCriador
-        } = await supabase
+        } = await supabaseAdmin
             .from('usuario')
             .select('tipo_usuario')
             .eq(
@@ -752,7 +946,7 @@ app.post('/reservas', async (c) => {
         const {
             data: reservasDoDia,
             error: erroConflito
-        } = await supabase
+        } = await supabaseAdmin
             .from('reserva')
             .select(
                 'id_reserva, horario_inicio, horario_fim, status, id_usuario, usuario(tipo_usuario)'
@@ -906,7 +1100,7 @@ app.post('/reservas', async (c) => {
 
             const {
                 error: erroCancelamento
-            } = await supabase
+            } = await supabaseAdmin
                 .from('reserva')
                 .update({
                     status:
@@ -938,7 +1132,7 @@ app.post('/reservas', async (c) => {
         const {
             data: novaReserva,
             error: erroNovaReserva
-        } = await supabase
+        } = await supabaseAdmin
             .from('reserva')
             .insert([
                 {
@@ -993,7 +1187,7 @@ app.post('/reservas', async (c) => {
                     const {
                         error:
                             erroRestauracao
-                    } = await supabase
+                    } = await supabaseAdmin
                         .from('reserva')
                         .update({
                             status:
@@ -1101,7 +1295,7 @@ app.post('/reservas', async (c) => {
 
             const {
                 error: erroNotificacao
-            } = await supabase
+            } = await supabaseAdmin
                 .from('notificacao')
                 .insert(
                     notificacoes
@@ -1141,52 +1335,18 @@ app.get('/notificacoes', async (c) => {
 
     try {
 
-        const idUsuario =
-            c.req.query('id_usuario')
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
-        if (!idUsuario) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'ID do usuário é obrigatório.'
-                },
-                400
-            )
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
         }
 
-        const {
-            data: usuario,
-            error: erroUsuario
-        } = await supabase
-            .from('usuario')
-            .select('id_usuario')
-            .eq(
-                'id_usuario',
-                idUsuario
-            )
-            .maybeSingle()
-
-        if (
-            erroUsuario ||
-            !usuario
-        ) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário não encontrado.'
-                },
-                404
-            )
-        }
+        const idUsuario = usuarioAutenticado.id_usuario
 
         const {
             data,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('notificacao')
             .select(
                 'id_notificacao, mensagem, tipo, lida, data_envio, id_usuario'
@@ -1245,28 +1405,18 @@ app.patch('/notificacoes/:id', async (c) => {
         const id =
             c.req.param('id')
 
-        const body =
-            await c.req.json()
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
-        const idUsuario =
-            body.id_usuario
-
-        if (!idUsuario) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'ID do usuário é obrigatório.'
-                },
-                400
-            )
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
         }
+
+        const idUsuario = usuarioAutenticado.id_usuario
 
         const {
             data: notificacao,
             error: erroNotificacao
-        } = await supabase
+        } = await supabaseAdmin
             .from('notificacao')
             .select(
                 'id_notificacao, id_usuario, lida'
@@ -1324,7 +1474,7 @@ app.patch('/notificacoes/:id', async (c) => {
         const {
             data,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('notificacao')
             .update({
                 lida:
@@ -1394,20 +1544,24 @@ app.post('/reclamacoes', async (c) => {
 
     try {
 
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
+        }
+
         const body =
             await c.req.parseBody()
 
-        const {
-            descricao,
-            id_usuario
-        } = body
+        const { descricao } = body
+        const id_usuario = usuarioAutenticado.id_usuario
 
         const foto =
             body.foto
 
         if (
             !descricao ||
-            !id_usuario
+            !String(descricao).trim()
         ) {
 
             return c.json(
@@ -1420,6 +1574,10 @@ app.post('/reclamacoes', async (c) => {
             )
         }
 
+        if (typeof descricao !== 'string' || descricao.trim().length > 5000) {
+            return c.json({ sucesso: false, mensagem: 'Descrição inválida ou muito longa.' }, 400)
+        }
+
         let imagemUrl =
             null
 
@@ -1429,17 +1587,27 @@ app.post('/reclamacoes', async (c) => {
             foto.size > 0
         ) {
 
+            const tiposPermitidos = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp'
+            }
+
+            if (!tiposPermitidos[foto.type] || foto.size > 5 * 1024 * 1024) {
+                return c.json({ sucesso: false, mensagem: 'Envie uma imagem JPG, PNG ou WebP de até 5 MB.' }, 400)
+            }
+
             const nomeArquivo =
-                String(Date.now()) +
-                '_' +
-                foto.name
+                randomBytes(16).toString('hex') +
+                '.' +
+                tiposPermitidos[foto.type]
 
             const buffer =
                 await foto.arrayBuffer()
 
             const {
                 error: erroUpload
-            } = await supabase
+            } = await supabaseAdmin
                 .storage
                 .from('reclamacoes')
                 .upload(
@@ -1469,7 +1637,7 @@ app.post('/reclamacoes', async (c) => {
 
             const {
                 data: urlData
-            } = supabase
+            } = supabaseAdmin
                 .storage
                 .from('reclamacoes')
                 .getPublicUrl(
@@ -1483,7 +1651,7 @@ app.post('/reclamacoes', async (c) => {
         const {
             data,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('reclamacao')
             .insert([
                 {
@@ -1541,50 +1709,16 @@ app.get('/reclamacoes', async (c) => {
 
     try {
 
-        const idUsuario =
-            c.req.query('id_usuario')
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
-        if (!idUsuario) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'ID do usuário é obrigatório.'
-                },
-                400
-            )
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
         }
 
-        const {
-            data: usuario,
-            error: erroUsuario
-        } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq(
-                'id_usuario',
-                idUsuario
-            )
-            .maybeSingle()
-
-        if (
-            erroUsuario ||
-            !usuario
-        ) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário não encontrado.'
-                },
-                404
-            )
-        }
+        const idUsuario = usuarioAutenticado.id_usuario
 
         let consulta =
-            supabase
+            supabaseAdmin
                 .from('reclamacao')
                 .select(
                     '*, usuario(nome)'
@@ -1598,9 +1732,9 @@ app.get('/reclamacoes', async (c) => {
                 )
 
         if (
-            usuario.tipo_usuario ===
+            usuarioAutenticado.tipo_usuario ===
                 'ALUNO' ||
-            usuario.tipo_usuario ===
+            usuarioAutenticado.tipo_usuario ===
                 'PROFESSOR'
         ) {
 
@@ -1657,25 +1791,18 @@ app.delete('/reclamacoes/:id', async (c) => {
         const id =
             c.req.param('id')
 
-        const idUsuario =
-            c.req.query('id_usuario')
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
-        if (!idUsuario) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'ID do usuário é obrigatório.'
-                },
-                400
-            )
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
         }
+
+        const idUsuario = usuarioAutenticado.id_usuario
 
         const {
             data: reclamacao,
             error: erroReclamacao
-        } = await supabase
+        } = await supabaseAdmin
             .from('reclamacao')
             .select(
                 'id_reclamacao, id_usuario, status'
@@ -1739,7 +1866,7 @@ app.delete('/reclamacoes/:id', async (c) => {
         const {
             data: reclamacaoExcluida,
             error: erroExclusao
-        } = await supabase
+        } = await supabaseAdmin
             .from('reclamacao')
             .delete()
             .eq(
@@ -1818,56 +1945,26 @@ app.patch('/reclamacoes/:id', async (c) => {
         const body =
             await c.req.json()
 
-        const {
-            resposta,
-            id_usuario_admin
-        } = body
+        const { resposta } = body
 
-        if (!resposta) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Escreva uma resposta.'
-                },
-                400
-            )
+        if (typeof resposta !== 'string' || !resposta.trim() || resposta.length > 5000) {
+            return c.json({ sucesso: false, mensagem: 'Escreva uma resposta válida.' }, 400)
         }
 
-        const {
-            data: admin,
-            error: erroAdmin
-        } = await supabase
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq(
-                'id_usuario',
-                id_usuario_admin
-            )
-            .maybeSingle()
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
-        if (
-            erroAdmin ||
-            !admin ||
-            admin.tipo_usuario !==
-            'ADMINISTRADOR'
-        ) {
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
+        }
 
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Apenas administradores podem responder.'
-                },
-                403
-            )
+        if (usuarioAutenticado.tipo_usuario !== 'ADMINISTRADOR') {
+            return c.json({ sucesso: false, mensagem: 'Apenas administradores podem responder.' }, 403)
         }
 
         const {
             data,
             error
-        } = await supabase
+        } = await supabaseAdmin
             .from('reclamacao')
             .update({
                 resposta:
@@ -1923,7 +2020,7 @@ serve(
             app.fetch,
 
         port:
-            3333
+            Number(process.env.PORT) || 3333
     },
 
     function (info) {

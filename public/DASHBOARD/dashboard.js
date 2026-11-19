@@ -280,7 +280,7 @@ async function carregarNotificacoes() {
 
         const resposta =
             await fetch(
-                'http://localhost:3333/notificacoes?id_usuario=' +
+                '/notificacoes?id_usuario=' +
                 encodeURIComponent(
                     usuario.id_usuario
                 )
@@ -338,7 +338,7 @@ async function marcarNotificacaoComoLida(
 
         const resposta =
             await fetch(
-                'http://localhost:3333/notificacoes/' +
+                '/notificacoes/' +
                 notificacao.id_notificacao,
                 {
                     method:
@@ -576,13 +576,27 @@ btnCancelarSaida.addEventListener(
 
 btnConfirmarSaida.addEventListener(
     'click',
-    function () {
+    async function () {
 
-        localStorage.clear()
+        try {
+            const resposta = await fetch('/logout', {
+                method: 'POST'
+            })
 
-        window.location.replace(
-            '../index.html'
-        )
+            if (!resposta.ok) {
+                alert('Não foi possível encerrar a sessão. Tente novamente.')
+                return
+            }
+
+            localStorage.clear()
+
+            window.location.replace(
+                '../index.html'
+            )
+
+        } catch (erro) {
+            alert('Erro ao encerrar a sessão. Tente novamente.')
+        }
     }
 )
 
