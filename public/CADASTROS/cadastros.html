@@ -13,7 +13,7 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="cadastros.css">
+    <link rel="stylesheet" href="cadastros.css?v=2">
 
 </head>
 
@@ -26,7 +26,19 @@
         </div>
     </div>
 
-    <script src="cadastros.js"></script>
+    <div class="modal-overlay" id="modalConfirmacao">
+        <div class="modal-sair">
+            <div class="modal-icone">!</div>
+            <h2>Confirmar ação</h2>
+            <p id="modalTexto"></p>
+            <div class="modal-acoes">
+                <button class="btn-modal btn-cancelar" id="modalCancelar">Cancelar</button>
+                <button class="btn-modal btn-confirmar" id="modalConfirmar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="cadastros.js?v=2"></script>
 
 </body>
 

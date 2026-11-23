@@ -15,6 +15,28 @@ if (localStorage.getItem('tema') === 'true') {
     document.documentElement.classList.add('dark-mode');
 }
 
+function confirmarModal(texto, textoBotao = 'Confirmar') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('modalConfirmacao');
+        const btnOk = document.getElementById('modalConfirmar');
+        const btnCancelar = document.getElementById('modalCancelar');
+
+        document.getElementById('modalTexto').textContent = texto;
+        btnOk.textContent = textoBotao;
+
+        function fechar(resposta) {
+            overlay.classList.remove('ativo');
+            resolve(resposta);
+        }
+
+        btnOk.onclick = () => fechar(true);
+        btnCancelar.onclick = () => fechar(false);
+        overlay.onclick = (e) => { if (e.target === overlay) fechar(false); };
+
+        overlay.classList.add('ativo');
+    });
+}
+
 const listaCadastros =
     document.getElementById('listaCadastros');
 
@@ -88,8 +110,13 @@ function renderizarCadastros(cadastros) {
         const btnRejeitar = document.createElement('button');
         btnRejeitar.className = 'btn-rejeitar';
         btnRejeitar.textContent = 'Rejeitar';
-        btnRejeitar.addEventListener('click', () => {
-            if (confirm(`Rejeitar o cadastro de ${cadastro.nome}?`)) {
+        btnRejeitar.addEventListener('click', async () => {
+            const ok = await confirmarModal(
+                `Rejeitar o cadastro de ${cadastro.nome}?`,
+                'Rejeitar'
+            );
+
+            if (ok) {
                 atualizarCadastro(cadastro.id_usuario, 'REJEITADO', null);
             }
         });
