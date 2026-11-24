@@ -474,6 +474,23 @@ function formatarStatus(
     return 'PENDENTE';
 }
 
+// Administrador cancelando a reserva de outra pessoa precisa explicar o motivo
+function precisaMotivo(
+    reserva
+) {
+
+    return (
+        usuario.tipo_usuario ===
+            'ADMINISTRADOR' &&
+        Number(
+            reserva.id_usuario
+        ) !==
+        Number(
+            usuario.id_usuario
+        )
+    );
+}
+
 // Mostra só HH:MM (o banco guarda HH:MM:SS)
 function formatarHora(
     horario
@@ -725,12 +742,16 @@ function criarCardIndividual(
                     tipo:
                         'cancelar',
 
+                    pedirMotivo:
+                        precisaMotivo(reserva),
+
                     aoConfirmar:
-                        async () => {
+                        async (motivo) => {
 
                             await atualizarStatus(
                                 reserva.id_reserva,
-                                'CANCELADA'
+                                'CANCELADA',
+                                motivo
                             );
                         }
                 });
@@ -800,12 +821,16 @@ function criarCardIndividual(
                     tipo:
                         'cancelar',
 
+                    pedirMotivo:
+                        precisaMotivo(reserva),
+
                     aoConfirmar:
-                        async () => {
+                        async (motivo) => {
 
                             await atualizarStatus(
                                 reserva.id_reserva,
-                                'CANCELADA'
+                                'CANCELADA',
+                                motivo
                             );
                         }
                 });
@@ -1235,12 +1260,16 @@ function abrirDetalhesGrupo(
                                 tipo:
                                     'cancelar',
 
+                                pedirMotivo:
+                                    precisaMotivo(ocorrencia),
+
                                 aoConfirmar:
-                                    async () => {
+                                    async (motivo) => {
 
                                         await atualizarStatus(
                                             ocorrencia.id_reserva,
-                                            'CANCELADA'
+                                            'CANCELADA',
+                                            motivo
                                         );
                                     }
                             });
@@ -1376,6 +1405,84 @@ function abrirConfirmacao(
     mensagem.textContent =
         configuracao.mensagem;
 
+    let campoMotivo =
+        null;
+
+    let areaMotivo =
+        null;
+
+    if (
+        configuracao.pedirMotivo
+    ) {
+
+        areaMotivo =
+            document.createElement(
+                'div'
+            );
+
+        areaMotivo.className =
+            'campo-motivo';
+
+        const rotuloMotivo =
+            document.createElement(
+                'label'
+            );
+
+        rotuloMotivo.textContent =
+            'Motivo do cancelamento (o aluno vai receber esta explicação)';
+
+        campoMotivo =
+            document.createElement(
+                'textarea'
+            );
+
+        campoMotivo.maxLength =
+            300;
+
+        campoMotivo.rows =
+            3;
+
+        campoMotivo.placeholder =
+            'Ex.: a quadra será usada para um evento da escola.';
+
+        const contadorMotivo =
+            document.createElement(
+                'span'
+            );
+
+        contadorMotivo.className =
+            'campo-motivo-contador';
+
+        contadorMotivo.textContent =
+            '0 / 300';
+
+        areaMotivo.appendChild(
+            rotuloMotivo
+        );
+
+        areaMotivo.appendChild(
+            campoMotivo
+        );
+
+        areaMotivo.appendChild(
+            contadorMotivo
+        );
+
+        campoMotivo.addEventListener(
+            'input',
+            () => {
+
+                contadorMotivo.textContent =
+                    campoMotivo.value.length +
+                    ' / 300';
+
+                campoMotivo.classList.remove(
+                    'com-erro'
+                );
+            }
+        );
+    }
+
     const acoes =
         document.createElement(
             'div'
@@ -1418,6 +1525,30 @@ function abrirConfirmacao(
         'click',
         async () => {
 
+            let motivo =
+                '';
+
+            if (
+                campoMotivo
+            ) {
+
+                motivo =
+                    campoMotivo.value.trim();
+
+                if (
+                    motivo.length < 3
+                ) {
+
+                    campoMotivo.classList.add(
+                        'com-erro'
+                    );
+
+                    campoMotivo.focus();
+
+                    return;
+                }
+            }
+
             btnConfirmar.disabled =
                 true;
 
@@ -1429,7 +1560,7 @@ function abrirConfirmacao(
 
             try {
 
-                await configuracao.aoConfirmar();
+                await configuracao.aoConfirmar(motivo);
 
             } finally {
 
@@ -1465,6 +1596,15 @@ function abrirConfirmacao(
         mensagem
     );
 
+    if (
+        areaMotivo
+    ) {
+
+        modal.appendChild(
+            areaMotivo
+        );
+    }
+
     modal.appendChild(
         acoes
     );
@@ -1490,6 +1630,13 @@ function abrirConfirmacao(
     document.body.appendChild(
         overlay
     );
+
+    if (
+        campoMotivo
+    ) {
+
+        campoMotivo.focus();
+    }
 }
 
 function fecharModais() {
@@ -1522,7 +1669,8 @@ document.addEventListener(
 
 async function atualizarStatus(
     idReserva,
-    novoStatus
+    novoStatus,
+    motivo
 ) {
 
     try {
@@ -1544,6 +1692,9 @@ async function atualizarStatus(
                         JSON.stringify({
                             novoStatus:
                                 novoStatus,
+
+                            motivo:
+                                motivo || '',
 
                             id_usuario_acao:
                                 usuario.id_usuario

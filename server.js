@@ -680,6 +680,11 @@ app.patch('/reservas/:id', async (c) => {
             novoStatus
         } = body
 
+        const motivoCancelamento =
+            typeof body.motivo === 'string'
+                ? body.motivo.trim().slice(0, 300)
+                : ''
+
         if (
             ![
                 'APROVADA',
@@ -702,7 +707,7 @@ app.patch('/reservas/:id', async (c) => {
             error: erroReserva
         } = await supabaseAdmin
             .from('reserva')
-            .select('id_usuario')
+            .select('id_usuario, status, data_reserva, horario_inicio, horario_fim, modalidade')
             .eq('id_reserva', id)
             .maybeSingle()
 
@@ -766,6 +771,27 @@ app.patch('/reservas/:id', async (c) => {
             )
         }
 
+        // Administrador cancelando a reserva de outra pessoa: precisa explicar o motivo
+        const adminCancelandoDeOutro =
+            novoStatus === 'CANCELADA' &&
+            ehAdmin &&
+            !ehDono
+
+        if (
+            adminCancelandoDeOutro &&
+            motivoCancelamento.length < 3
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Explique o motivo do cancelamento.'
+                },
+                400
+            )
+        }
+
         const {
             data,
             error
@@ -793,6 +819,54 @@ app.patch('/reservas/:id', async (c) => {
                 },
                 400
             )
+        }
+
+        // Avisa o dono da reserva (só na primeira vez que ela é cancelada)
+        if (
+            adminCancelandoDeOutro &&
+            reserva.status !== 'CANCELADA'
+        ) {
+
+            const mensagemAviso =
+                'Sua reserva de ' +
+                (reserva.modalidade || 'quadra') +
+                ' do dia ' +
+                formatarDataBrasileira(
+                    reserva.data_reserva
+                ) +
+                ', das ' +
+                formatarHorario(
+                    reserva.horario_inicio
+                ) +
+                ' às ' +
+                formatarHorario(
+                    reserva.horario_fim
+                ) +
+                ', foi cancelada por um administrador. Motivo: ' +
+                motivoCancelamento
+
+            const {
+                error: erroAviso
+            } = await supabaseAdmin
+                .from('notificacao')
+                .insert([{
+                    mensagem:
+                        mensagemAviso,
+                    tipo:
+                        'RESERVA_CANCELADA',
+                    lida:
+                        false,
+                    id_usuario:
+                        reserva.id_usuario
+                }])
+
+            if (erroAviso) {
+
+                console.error(
+                    'Erro ao criar notificação de cancelamento:',
+                    erroAviso
+                )
+            }
         }
 
         return c.json({
