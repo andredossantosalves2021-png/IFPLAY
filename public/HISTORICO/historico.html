@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de reservas</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="historico.css?v=1">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>Histórico de reservas</h1>
+
+            <p class="subtitulo">
+                Reservas aprovadas que já aconteceram. O registro mostra quem
+                <strong>reservou</strong> a quadra e o que os alunos
+                contaram sobre o estado do local depois de usá-la.
+            </p>
+
+            <form id="filtros" class="filtros" autocomplete="off">
+
+                <div class="campo campo-busca">
+                    <label for="busca">Buscar por nome ou RA</label>
+                    <input type="text" id="busca" placeholder="Ex.: Arthur ou 0083385" maxlength="60">
+                </div>
+
+                <div class="campo">
+                    <label for="de">De</label>
+                    <input type="date" id="de">
+                </div>
+
+                <div class="campo">
+                    <label for="ate">Até</label>
+                    <input type="date" id="ate">
+                </div>
+
+                <div class="campo">
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo">
+                        <option value="">Todos</option>
+                        <option value="JOGO_LIVRE">Jogo livre</option>
+                        <option value="AULA">Aula</option>
+                        <option value="EVENTO">Evento</option>
+                    </select>
+                </div>
+
+                <label class="campo-check" for="somenteProblemas">
+                    <input type="checkbox" id="somenteProblemas">
+                    Só com problema relatado
+                </label>
+
+                <div class="filtros-acoes">
+                    <button type="submit" class="btn btn-principal">Filtrar</button>
+                    <button type="button" class="btn btn-secundario" id="btnLimpar">Limpar</button>
+                </div>
+
+            </form>
+
+            <p class="resumo" id="resumo" aria-live="polite"></p>
+
+            <div id="lista"></div>
+
+            <button type="button" class="btn btn-secundario btn-mais" id="btnMais" hidden>
+                Carregar mais
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="historico.js?v=1"></script>
+
+</body>
+
+</html>

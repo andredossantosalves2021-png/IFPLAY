@@ -6,6 +6,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import bcrypt from 'bcryptjs'
 import { randomBytes, createHash } from 'node:crypto'
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie'
+import { registrarRotasHistoricoFeedback } from './rotas-historico-feedback.js'
 
 const app = new Hono()
 
@@ -2013,6 +2014,8 @@ app.patch('/reclamacoes/:id', async (c) => {
         )
     }
 })
+
+registrarRotasHistoricoFeedback(app, supabaseAdmin, obterUsuarioAutenticado)
 
 serve(
     {

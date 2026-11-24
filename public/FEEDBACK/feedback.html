@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliar a quadra</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+
+            document.documentElement.className = isDark
+                ? 'dark-mode'
+                : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="feedback.css?v=1">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <p class="status" id="carregando">Carregando...</p>
+
+            <!-- Nada para avaliar -->
+            <section id="vazio" hidden>
+                <h1>Tudo em dia!</h1>
+                <p class="intro">
+                    Você não tem nenhuma reserva para avaliar agora. Quando uma
+                    reserva sua terminar, ela aparece aqui por alguns dias.
+                </p>
+            </section>
+
+            <!-- Questionário -->
+            <form id="formFeedback" hidden novalidate>
+
+                <h1>Como foi a sua reserva?</h1>
+
+                <p class="resumo-reserva" id="resumoReserva"></p>
+
+                <p class="intro">
+                    Leva menos de 1 minuto. Suas respostas ajudam a manter a
+                    quadra em ordem para todo mundo.
+                </p>
+
+                <fieldset class="pergunta" id="perguntaEstado">
+                    <legend>1. Como você encontrou a quadra quando chegou?</legend>
+                    <div class="opcoes" id="opcoesEstado"></div>
+                </fieldset>
+
+                <fieldset class="pergunta" id="perguntaItens">
+                    <legend>2. Como estavam a estrutura e os materiais?</legend>
+                    <p class="dica">
+                        Mexa só no que você usou. O que ficar como "Não usei" não conta.
+                    </p>
+                    <div class="itens" id="listaItens"></div>
+                </fieldset>
+
+                <fieldset class="pergunta" id="perguntaOrganizada">
+                    <legend>3. Você deixou a quadra organizada?</legend>
+                    <p class="dica">Lixo recolhido, mesas, cadeiras e materiais no lugar.</p>
+                    <div class="opcoes opcoes-curtas" id="opcoesOrganizada"></div>
+                </fieldset>
+
+                <div class="pergunta">
+                    <label class="legenda" for="observacao">
+                        4. Quer contar mais alguma coisa? <span>(opcional)</span>
+                    </label>
+                    <textarea id="observacao" maxlength="300" rows="3"
+                        placeholder="Ex.: a rede de vôlei estava rasgada."></textarea>
+                    <p class="contador" id="contador">0 / 300</p>
+                </div>
+
+                <p class="erro-form" id="erroForm" role="alert" hidden></p>
+
+                <div class="acoes">
+                    <button type="submit" class="btn btn-principal" id="btnEnviar">Enviar avaliação</button>
+                    <button type="button" class="btn btn-secundario" id="btnDepois">Responder depois</button>
+                </div>
+
+            </form>
+
+            <!-- Agradecimento -->
+            <section id="agradecimento" hidden>
+                <h1>Obrigado!</h1>
+                <p class="intro" id="textoAgradecimento">
+                    Sua avaliação foi enviada e vai ajudar a cuidar da quadra.
+                </p>
+                <div class="acoes">
+                    <button type="button" class="btn btn-principal" id="btnProxima" hidden>
+                        Avaliar a próxima reserva
+                    </button>
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+
+    <script src="feedback.js?v=1"></script>
+
+</body>
+
+</html>
