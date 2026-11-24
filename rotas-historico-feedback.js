@@ -35,6 +35,21 @@ const ITENS = [
     'mesas_cadeiras'
 ]
 
+const NOMES_ITENS = {
+    piso: 'piso',
+    rede_volei: 'rede de vôlei',
+    tabelas_basquete: 'tabelas de basquete',
+    gols_redes: 'gols e redes',
+    bolas_materiais: 'bolas e materiais',
+    mesas_cadeiras: 'mesas e cadeiras'
+}
+
+const NOMES_ESTADOS = {
+    LIMPA: 'limpa',
+    ACEITAVEL: 'aceitável',
+    SUJA: 'suja ou desorganizada'
+}
+
 const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
 // ---------- Funções auxiliares ----------
@@ -139,6 +154,72 @@ async function buscarReservaAnterior(supabase, reserva) {
         data_reserva: anterior.data_reserva,
         horario_inicio: anterior.horario_inicio,
         horario_fim: anterior.horario_fim
+    }
+}
+
+// Avisa todos os administradores (pelo sino) quando chega uma avaliação com
+// problema. Se der erro, a avaliação já está salva e só o aviso deixa de sair.
+async function avisarAdministradores(supabase, dados) {
+
+    try {
+
+        const { data: admins, error: erroAdmins } = await supabase
+            .from('usuario')
+            .select('id_usuario')
+            .eq('tipo_usuario', 'ADMINISTRADOR')
+            .eq('status_cadastro', 'APROVADO')
+
+        if (erroAdmins || !admins || admins.length === 0) {
+            if (erroAdmins) console.error('Aviso de avaliação: erro ao buscar administradores:', erroAdmins)
+            return
+        }
+
+        const itensComProblema = Object.keys(dados.itens)
+            .filter((chave) => dados.itens[chave] === 'PROBLEMA')
+            .map((chave) => NOMES_ITENS[chave] || chave)
+
+        const [ano, mes, dia] = String(dados.reserva.data_reserva).slice(0, 10).split('-')
+
+        let mensagem =
+            'Avaliação com problema: ' + dados.nome +
+            ' avaliou a reserva de ' + (dados.reserva.modalidade || 'quadra') +
+            ' do dia ' + dia + '/' + mes + '/' + ano +
+            ' (' + String(dados.reserva.horario_inicio).slice(0, 5) +
+            ' às ' + String(dados.reserva.horario_fim).slice(0, 5) + ').' +
+            ' Quadra ao chegar: ' + (NOMES_ESTADOS[dados.estado] || dados.estado) + '.'
+
+        if (itensComProblema.length > 0) {
+            mensagem += ' Com problema: ' + itensComProblema.join(', ') + '.'
+        }
+
+        if (dados.organizada === false) {
+            mensagem += ' Não foi deixada organizada.'
+        }
+
+        if (dados.observacao) {
+            const trecho = dados.observacao.length > 120
+                ? dados.observacao.slice(0, 120) + '...'
+                : dados.observacao
+            mensagem += ' Comentário: "' + trecho + '".'
+        }
+
+        mensagem += ' Veja no Histórico.'
+
+        const { error } = await supabase
+            .from('notificacao')
+            .insert(admins.map((a) => ({
+                mensagem: mensagem,
+                tipo: 'FEEDBACK_PROBLEMA',
+                lida: false,
+                id_usuario: a.id_usuario
+            })))
+
+        if (error) {
+            console.error('Aviso de avaliação: erro ao criar notificação:', error)
+        }
+
+    } catch (erro) {
+        console.error('Aviso de avaliação:', erro)
     }
 }
 
@@ -484,7 +565,7 @@ export function registrarRotasHistoricoFeedback(app, supabase, obterUsuarioAuten
 
             const { data: reserva, error: erroReserva } = await supabase
                 .from('reserva')
-                .select('id_reserva, id_usuario, status, data_reserva, horario_fim')
+                .select('id_reserva, id_usuario, status, data_reserva, horario_inicio, horario_fim, modalidade')
                 .eq('id_reserva', id_reserva)
                 .maybeSingle()
 
@@ -562,6 +643,17 @@ export function registrarRotasHistoricoFeedback(app, supabase, obterUsuarioAuten
                 }
 
                 return c.json({ sucesso: false, mensagem: error.message }, 400)
+            }
+
+            if (temProblema) {
+                await avisarAdministradores(supabase, {
+                    nome: usuario.nome,
+                    reserva: reserva,
+                    estado: estado_ao_chegar,
+                    itens: itensFinal,
+                    organizada: deixou_organizada,
+                    observacao: observacaoLimpa
+                })
             }
 
             return c.json({
