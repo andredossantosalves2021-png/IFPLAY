@@ -750,8 +750,12 @@ function criarCardIndividual(
         );
 
     } else if (
-        filtroAtual ===
-            'minhas' &&
+        (
+            filtroAtual ===
+                'minhas' ||
+            usuario.tipo_usuario ===
+                'ADMINISTRADOR'
+        ) &&
         reserva.status !==
             'CANCELADA'
     ) {
@@ -1097,9 +1101,12 @@ function abrirDetalhesGrupo(
         titulo
     );
 
+    // Dono da reserva (em "Minhas") ou administrador (em qualquer lista)
     const podeCancelar =
         filtroAtual ===
-        'minhas';
+            'minhas' ||
+        usuario.tipo_usuario ===
+            'ADMINISTRADOR';
 
     ocorrencias
         .slice()
