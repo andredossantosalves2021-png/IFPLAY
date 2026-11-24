@@ -474,6 +474,14 @@ function formatarStatus(
     return 'PENDENTE';
 }
 
+// Mostra só HH:MM (o banco guarda HH:MM:SS)
+function formatarHora(
+    horario
+) {
+
+    return String(horario || '').slice(0, 5);
+}
+
 function formatarData(
     data
 ) {
@@ -591,9 +599,9 @@ function criarCardIndividual(
 
     horario.textContent =
         'Horário: ' +
-        reserva.horario_inicio +
+        formatarHora(reserva.horario_inicio) +
         ' às ' +
-        reserva.horario_fim;
+        formatarHora(reserva.horario_fim);
 
     const reservadoPor =
         document.createElement(
@@ -922,9 +930,9 @@ function criarCardGrupo(
         'Toda ' +
         nomeDiaSemana +
         ', ' +
-        primeira.horario_inicio +
+        formatarHora(primeira.horario_inicio) +
         ' às ' +
-        primeira.horario_fim;
+        formatarHora(primeira.horario_fim);
 
     const total =
         document.createElement(
@@ -1164,9 +1172,9 @@ function abrirDetalhesGrupo(
                     );
 
                 horario.textContent =
-                    ocorrencia.horario_inicio +
+                    formatarHora(ocorrencia.horario_inicio) +
                     ' às ' +
-                    ocorrencia.horario_fim;
+                    formatarHora(ocorrencia.horario_fim);
 
                 item.appendChild(
                     status
