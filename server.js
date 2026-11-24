@@ -917,6 +917,29 @@ app.post('/reservas', async (c) => {
             return c.json({ sucesso: false, mensagem: 'Data ou horário inválido.' }, 400)
         }
 
+        const agoraBrasilia = new Date()
+
+        const hojeBrasilia = agoraBrasilia.toLocaleDateString('en-CA', {
+            timeZone: 'America/Sao_Paulo'
+        })
+
+        const horaBrasilia = agoraBrasilia.toLocaleTimeString('en-GB', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        })
+
+        if (
+            String(data_reserva) < hojeBrasilia ||
+            (
+                String(data_reserva) === hojeBrasilia &&
+                horarioParaMinutos(horario_inicio) < horarioParaMinutos(horaBrasilia)
+            )
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Não é possível reservar um horário que já passou.' }, 400)
+        }
+
         const {
             data: criador,
             error: erroCriador

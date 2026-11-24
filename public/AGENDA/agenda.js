@@ -229,6 +229,40 @@ function dataEhPassada(
     return data < dataHoje;
 }
 
+function horarioJaPassou(
+    data,
+    horario
+) {
+
+    if (
+        !data ||
+        !horario
+    ) {
+        return false;
+    }
+
+    if (
+        data !==
+        obterDataHoje()
+    ) {
+        return false;
+    }
+
+    const agora =
+        new Date();
+
+    const minutosAgora =
+        agora.getHours() * 60 +
+        agora.getMinutes();
+
+    return (
+        converterHorarioEmMinutos(
+            horario
+        ) <
+        minutosAgora
+    );
+}
+
 function dataEhValidaParaAgenda(
     data
 ) {
@@ -654,6 +688,28 @@ function validarReservaRecorrente() {
         return false;
     }
 
+    const primeiraData =
+        calcularDatasRecorrentes(
+            Number(diaSemanaSelect.value),
+            1,
+            dataInicioRecorrente.value
+        )[0];
+
+    if (
+        horarioJaPassou(
+            primeiraData,
+            horaInicio
+        )
+    ) {
+
+        mostrarNotificacao(
+            'O primeiro dia dessa reserva já passou nesse horário. Escolha outra data de início ou outro horário.',
+            'aviso'
+        );
+
+        return false;
+    }
+
     const inicioMinutos =
         converterHorarioEmMinutos(
             horaInicio
@@ -783,6 +839,21 @@ function validarReservaUnica() {
 
         mostrarNotificacao(
             'Escolha o horário inicial.',
+            'aviso'
+        );
+
+        return false;
+    }
+
+    if (
+        horarioJaPassou(
+            dataReserva.value,
+            inicio
+        )
+    ) {
+
+        mostrarNotificacao(
+            'Esse horário já passou. Escolha um horário a partir de agora.',
             'aviso'
         );
 
@@ -1260,3 +1331,91 @@ atividadePersonalizada.addEventListener(
 restaurarRascunho();
 
 aplicarDataDoCalendario();
+
+// ---------- Horários que já passaram (reserva única) ----------
+// Quando a data escolhida é hoje, os horários que já passaram ficam
+// desativados na lista. O servidor também confere isso ao salvar.
+
+function atualizarHorariosDisponiveis() {
+
+    const opcoes =
+        Array.from(
+            horarioInicio.options
+        );
+
+    opcoes.forEach(
+        (opcao) => {
+
+            const passou =
+                horarioJaPassou(
+                    dataReserva.value,
+                    opcao.value
+                );
+
+            opcao.disabled =
+                passou;
+        }
+    );
+
+    const selecionada =
+        horarioInicio.selectedOptions[0];
+
+    if (
+        !selecionada ||
+        selecionada.disabled
+    ) {
+
+        const primeiraLivre =
+            opcoes.find(
+                (opcao) =>
+                    !opcao.disabled
+            );
+
+        horarioInicio.value =
+            primeiraLivre
+                ? primeiraLivre.value
+                : '';
+    }
+
+    atualizarResumo();
+}
+
+dataReserva.addEventListener(
+    'change',
+    atualizarHorariosDisponiveis
+);
+
+// Se a página ficar aberta por horas, a lista acompanha o relógio.
+setInterval(
+    atualizarHorariosDisponiveis,
+    60 * 1000
+);
+
+atualizarHorariosDisponiveis();
+
+
+// ---------- Horário livre na reserva recorrente ----------
+// Aceita qualquer minuto (ex.: 14:25), não só horas cheias.
+// Os campos começam em 07:00 e 08:00, para o seletor do navegador
+// não preencher sozinho com os minutos do relógio.
+
+[
+    horarioInicioRecorrente,
+    horarioFimRecorrente
+].forEach(
+    (campo) => {
+
+        campo.step = 60;
+
+        campo.removeAttribute('min');
+        campo.removeAttribute('max');
+    }
+);
+
+if (!horarioInicioRecorrente.value) {
+    horarioInicioRecorrente.value = '07:00';
+}
+
+if (!horarioFimRecorrente.value) {
+    horarioFimRecorrente.value = '08:00';
+}

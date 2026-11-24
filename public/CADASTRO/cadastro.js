@@ -83,8 +83,7 @@ form.addEventListener('submit', async (e) => {
         const dados = await resposta.json();
 
         if (dados.sucesso) {
-            alert(dados.mensagem || 'Cadastro enviado! Aguarde a aprovação.');
-            window.location.href = '/index.html';
+            mostrarCadastroEnviado(dados.mensagem);
         } else {
             mensagemErro.textContent = dados.mensagem || 'Não foi possível concluir o cadastro.';
         }
@@ -94,3 +93,37 @@ form.addEventListener('submit', async (e) => {
         mensagemErro.textContent = 'Erro ao conectar com o servidor.';
     }
 });
+
+// Aviso estilizado (no lugar do alert nativo do navegador)
+function mostrarCadastroEnviado(mensagem) {
+
+    const modal = document.getElementById('modalCadastroEnviado');
+    const botao = document.getElementById('btnCadastroEnviado');
+
+    // O servidor manda "Cadastro enviado! Aguarde a aprovação de um administrador."
+    // O título já diz "Cadastro enviado!", então tiramos a repetição do texto.
+    const texto = String(mensagem || '')
+        .replace(/^\s*Cadastro enviado!?\s*/i, '')
+        .trim();
+
+    if (texto) {
+        document.getElementById('textoCadastroEnviado').textContent = texto;
+    }
+
+    function irParaLogin() {
+        window.location.href = '/index.html';
+    }
+
+    botao.addEventListener('click', irParaLogin);
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) irParaLogin();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') irParaLogin();
+    });
+
+    modal.hidden = false;
+    botao.focus();
+}

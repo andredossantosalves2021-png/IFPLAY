@@ -1194,9 +1194,6 @@ function abrirDetalhesGrupo(
                     btnCancelar.className =
                         'btn-cancelar';
 
-                    btnCancelar.style.marginTop =
-                        '10px';
-
                     btnCancelar.textContent =
                         'Cancelar esta data';
 
