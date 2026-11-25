@@ -755,7 +755,7 @@ app.get('/reservas', async (c) => {
             supabaseAdmin
                 .from('reserva')
                 .select(
-                    '*, usuario ( nome )'
+                    '*, usuario!fk_reserva_usuario ( nome )'
                 )
                 .or(filtroData)
                 .order(
@@ -1408,7 +1408,7 @@ async function criarReservas(usuarioAutenticado, datas, dados) {
 
     const { data: reservasDasDatas, error: erroConflito } = await supabaseAdmin
         .from('reserva')
-        .select('id_reserva, data_reserva, horario_inicio, horario_fim, status, modalidade, id_usuario, usuario(tipo_usuario)')
+        .select('id_reserva, data_reserva, horario_inicio, horario_fim, status, modalidade, id_usuario, usuario!fk_reserva_usuario(tipo_usuario)')
         .in('data_reserva', datas)
         .neq('status', 'CANCELADA')
 

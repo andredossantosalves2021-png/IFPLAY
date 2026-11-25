@@ -127,7 +127,7 @@ async function buscarReservaAnterior(supabase, reserva) {
 
     const { data, error } = await supabase
         .from('reserva')
-        .select('data_reserva, horario_inicio, horario_fim, usuario ( nome )')
+        .select('data_reserva, horario_inicio, horario_fim, usuario!fk_reserva_usuario ( nome )')
         .eq('status', 'APROVADA')
         .or(
             'data_reserva.lt.' + reserva.data_reserva +
@@ -250,7 +250,7 @@ export function registrarRotasHistoricoFeedback(app, supabase, obterUsuarioAuten
             let query = supabase
                 .from('reserva')
                 .select(
-                    '*, usuario ( nome, ra, tipo_usuario )',
+                    '*, usuario!fk_reserva_usuario ( nome, ra, tipo_usuario )',
                     { count: 'exact' }
                 )
                 .eq('status', 'APROVADA')
