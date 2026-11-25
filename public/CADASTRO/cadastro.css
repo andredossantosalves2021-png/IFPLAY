@@ -113,9 +113,9 @@ body {
     text-decoration: underline;
 }
 .logo {
-    width: 150px;
-    max-width: 50%;
-    margin-bottom: 18px;
+    width: 220px;
+    max-width: 60%;
+    margin-bottom: 22px;
 }
 
 .logo img {
@@ -156,8 +156,8 @@ body {
     }
 
     .logo {
-        width: 120px;
-        margin-bottom: 14px;
+        width: 170px;
+        margin-bottom: 16px;
     }
 
     .container {
@@ -297,4 +297,27 @@ body {
     padding: 0 18px;
     font-size: 12px;
     color: #4b5563;
+}
+
+/* Textos de exemplo em cinza e sem o fundo azul do preenchimento automático */
+.input-cadastro input {
+    color: #111827;
+}
+
+.input-cadastro input::placeholder {
+    color: #9ca3af;
+}
+
+.input-cadastro i,
+.botao-ver-senha {
+    color: #6b7280;
+}
+
+.input-cadastro input:-webkit-autofill,
+.input-cadastro input:-webkit-autofill:hover,
+.input-cadastro input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: #111827;
+    caret-color: #111827;
+    transition: background-color 9999s ease-out;
 }

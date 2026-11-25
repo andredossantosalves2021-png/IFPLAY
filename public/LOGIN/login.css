@@ -262,3 +262,125 @@ body {
 [hidden] {
     display: none !important;
 }
+
+/* =====================================================================
+   Visual alinhado com a tela de cadastro: cartão branco, logo acima
+   do cartão (sem encostar), botão azul, textos de exemplo em cinza e
+   sem o fundo azul que o Chrome põe nos campos preenchidos sozinhos.
+   ===================================================================== */
+
+body {
+    flex-direction: column;
+    min-height: 100dvh;
+    padding: 24px 16px;
+    background-color: #f3f4f6;
+}
+
+.logo {
+    position: static;
+    transform: none;
+    width: 220px;
+    max-width: 60%;
+    margin-bottom: 22px;
+}
+
+.logo img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.container {
+    background-color: #ffffff;
+}
+
+.container h1 {
+    margin-bottom: 14px;
+}
+
+.input-login input {
+    color: #111827;
+}
+
+.input-login input::placeholder {
+    color: #9ca3af;
+}
+
+.input-login i,
+.botao-ver-senha {
+    color: #6b7280;
+}
+
+/* Campo preenchido pelo navegador: mantém branco em vez de azul */
+.input-login input:-webkit-autofill,
+.input-login input:-webkit-autofill:hover,
+.input-login input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: #111827;
+    caret-color: #111827;
+    transition: background-color 9999s ease-out;
+}
+
+.link-esqueci {
+    width: fit-content;
+    margin: 4px 6px 0 auto;
+    padding: 2px 4px;
+    font-size: 13px;
+    color: #4b5563;
+    border-radius: 6px;
+}
+
+.link-esqueci:hover {
+    color: #022468;
+}
+
+.mensagem-login {
+    min-height: 0;
+    margin: 12px 0 0;
+}
+
+.mensagem-login:empty {
+    display: none;
+}
+
+.botao-login {
+    margin-top: 18px;
+    background-color: #022468;
+    color: #ffffff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.botao-login:hover:not(:disabled) {
+    background-color: #0b2454;
+}
+
+.botao-login:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.link-cadastro {
+    margin-top: 18px;
+}
+
+.texto-explicacao {
+    color: #6b7280;
+}
+
+@media (max-width: 480px) {
+
+    body {
+        justify-content: flex-start;
+        padding: 20px 14px 28px;
+    }
+
+    .logo {
+        width: 170px;
+        margin-bottom: 16px;
+    }
+}
