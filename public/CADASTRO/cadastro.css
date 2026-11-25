@@ -7,9 +7,12 @@
 }
 body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    min-height: 100dvh;
+    padding: 24px 16px;
     background-color: #F3F4F6;
     background-size: cover;
     background-position: center;
@@ -17,7 +20,8 @@ body {
 .container {
     position: relative;
     z-index: 1;
-    width: 420px;
+    width: 100%;
+    max-width: 420px;
     background-color: #fff;
     border: 2px solid rgba(255, 255, 255, .2);
     border-radius: 20px;
@@ -103,19 +107,15 @@ body {
     text-decoration: underline;
 }
 .logo {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translate(-50%, 0);
-  width: 160px;      
-  max-width: 40%;
-  z-index: 0;        
+    width: 150px;
+    max-width: 50%;
+    margin-bottom: 18px;
 }
 
 .logo img {
-  width: 100%;
-  height: auto;
-  display: block;
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .corum {
@@ -138,6 +138,48 @@ body {
     align-items: center;
     gap: 6px;
     cursor: pointer;
+}
+
+/* ===== Celular ===== */
+
+@media (max-width: 480px) {
+
+    body {
+        justify-content: flex-start;
+        padding: 20px 14px 28px;
+    }
+
+    .logo {
+        width: 120px;
+        margin-bottom: 14px;
+    }
+
+    .container {
+        padding: 22px 20px;
+        border-radius: 16px;
+    }
+
+    .container h1 {
+        font-size: 28px;
+    }
+
+    .tipo-cadastro {
+        flex-wrap: wrap;
+        gap: 8px 18px;
+    }
+
+    .input-cadastro {
+        height: 46px;
+    }
+
+    .input-cadastro input {
+        padding: 12px 42px 12px 18px;
+        font-size: 15px;
+    }
+
+    .botao-cadastro {
+        height: 48px;
+    }
 }
 
 /* ===== Aviso: cadastro enviado ===== */
