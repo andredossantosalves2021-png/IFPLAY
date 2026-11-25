@@ -26,6 +26,16 @@ const TIPOS_COM_FEEDBACK = ['ALUNO']
 const TIPOS_RESERVA = ['JOGO_LIVRE', 'AULA', 'EVENTO']
 const ESTADOS_QUADRA = ['LIMPA', 'ACEITAVEL', 'SUJA']
 const NIVEIS_ITEM = ['OK', 'PROBLEMA', 'NAO_USEI']
+// Nomes que aparecem no aviso enviado ao administrador
+const ROTULOS_ITENS = {
+    piso: 'piso',
+    rede_volei: 'rede de vôlei',
+    tabelas_basquete: 'tabelas de basquete',
+    gols_redes: 'gols e redes',
+    bolas_materiais: 'bolas e materiais',
+    mesas_cadeiras: 'mesas e cadeiras'
+}
+
 const ITENS = [
     'piso',
     'rede_volei',
@@ -484,7 +494,7 @@ export function registrarRotasHistoricoFeedback(app, supabase, obterUsuarioAuten
 
             const { data: reserva, error: erroReserva } = await supabase
                 .from('reserva')
-                .select('id_reserva, id_usuario, status, data_reserva, horario_fim')
+                .select('id_reserva, id_usuario, status, data_reserva, horario_inicio, horario_fim, modalidade')
                 .eq('id_reserva', id_reserva)
                 .maybeSingle()
 
@@ -562,6 +572,59 @@ export function registrarRotasHistoricoFeedback(app, supabase, obterUsuarioAuten
                 }
 
                 return c.json({ sucesso: false, mensagem: error.message }, 400)
+            }
+
+            // Avaliação com problema: avisa os administradores pelo sino.
+            // Se o aviso falhar, a avaliação já foi salva e o aluno não é afetado.
+            if (temProblema) {
+                try {
+
+                    const { data: admins } = await supabase
+                        .from('usuario')
+                        .select('id_usuario')
+                        .eq('tipo_usuario', 'ADMINISTRADOR')
+
+                    const problemas = []
+
+                    if (estado_ao_chegar === 'SUJA') problemas.push('quadra suja ou desorganizada')
+
+                    for (const chave of ITENS) {
+                        if (itensFinal[chave] === 'PROBLEMA') problemas.push(ROTULOS_ITENS[chave])
+                    }
+
+                    if (deixou_organizada === false) problemas.push('não foi deixada organizada')
+
+                    const [ano, mes, dia] = String(reserva.data_reserva).split('-')
+
+                    const mensagemAviso =
+                        (usuario.nome || 'Um aluno') +
+                        ' relatou problema na reserva de ' +
+                        (reserva.modalidade || 'quadra') +
+                        ' do dia ' + dia + '/' + mes + ', das ' +
+                        String(reserva.horario_inicio).slice(0, 5) + ' às ' +
+                        String(reserva.horario_fim).slice(0, 5) + ': ' +
+                        problemas.join(', ') +
+                        '. Veja os detalhes no Histórico.'
+
+                    if (admins && admins.length > 0) {
+
+                        const { error: erroAviso } = await supabase
+                            .from('notificacao')
+                            .insert(admins.map((a) => ({
+                                mensagem: mensagemAviso,
+                                tipo: 'FEEDBACK_PROBLEMA',
+                                lida: false,
+                                id_usuario: a.id_usuario
+                            })))
+
+                        if (erroAviso) {
+                            console.error('Erro ao avisar administradores:', erroAviso)
+                        }
+                    }
+
+                } catch (erroAviso) {
+                    console.error('Erro ao avisar administradores:', erroAviso)
+                }
             }
 
             return c.json({

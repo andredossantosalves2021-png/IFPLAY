@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -1012,9 +1014,11 @@ html.dark-mode #notificacaoReservas.notificacao.erro::before {
 
 .campo-motivo label {
     display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
-    font-weight: bold;
+    margin-bottom: 8px;
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
     color: #374151;
 }
 

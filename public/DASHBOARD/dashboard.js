@@ -183,6 +183,12 @@ function criarItemNotificacao(
     ) {
         tipo.textContent =
             'Reserva cancelada'
+    } else if (
+        notificacao.tipo ===
+        'FEEDBACK_PROBLEMA'
+    ) {
+        tipo.textContent =
+            'Avaliação com problema'
     } else {
         tipo.textContent =
             'Aviso'
