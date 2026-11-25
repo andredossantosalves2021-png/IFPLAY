@@ -1095,71 +1095,54 @@ formReserva.addEventListener(
 
             try {
 
-                const idGrupoRecorrencia =
-                    crypto.randomUUID();
+                // Uma chamada só: o servidor confere todas as datas e
+                // cria todas ou nenhuma.
+                const resposta =
+                    await fetch(
+                        '/reservas/recorrente',
+                        {
+                            method:
+                                'POST',
 
-                for (
-                    const data of datas
+                            headers: {
+                                'Content-Type':
+                                    'application/json'
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    datas:
+                                        datas,
+
+                                    horario_inicio:
+                                        horaInicio,
+
+                                    horario_fim:
+                                        horaFim,
+
+                                    modalidade:
+                                        modalidade,
+
+                                    tipo_reserva:
+                                        tipoReservaSelect.value
+                                })
+                        }
+                    );
+
+                const resultado =
+                    await resposta.json();
+
+                if (
+                    !resultado.sucesso
                 ) {
 
-                    const resposta =
-                        await fetch(
-                            '/reservas',
-                            {
-                                method:
-                                    'POST',
+                    mostrarNotificacao(
+                        resultado.mensagem ||
+                        'Não foi possível criar o agendamento recorrente.',
+                        'erro'
+                    );
 
-                                headers: {
-                                    'Content-Type':
-                                        'application/json'
-                                },
-
-                                body:
-                                    JSON.stringify({
-                                        data_reserva:
-                                            data,
-
-                                        horario_inicio:
-                                            horaInicio,
-
-                                        horario_fim:
-                                            horaFim,
-
-                                        modalidade:
-                                            modalidade,
-
-                                        tipo_reserva:
-                                            tipoReservaSelect.value,
-
-                                        recorrente:
-                                            true,
-
-                                        id_usuario:
-                                            usuario.id_usuario,
-
-                                        id_recorrencia:
-                                            idGrupoRecorrencia
-                                    })
-                            }
-                        );
-
-                    const resultado =
-                        await resposta.json();
-
-                    if (
-                        !resultado.sucesso
-                    ) {
-
-                        mostrarNotificacao(
-                            'Erro ao criar reserva de ' +
-                            data +
-                            ': ' +
-                            resultado.mensagem,
-                            'erro'
-                        );
-
-                        return;
-                    }
+                    return;
                 }
 
                 mostrarNotificacao(

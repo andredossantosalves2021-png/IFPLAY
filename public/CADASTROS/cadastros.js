@@ -51,7 +51,10 @@ async function carregarCadastros() {
         const resultado = await resposta.json();
 
         if (!resultado.sucesso) {
-            listaCadastros.innerHTML = `<p>${resultado.mensagem}</p>`;
+            listaCadastros.innerHTML = '';
+            const aviso = document.createElement('p');
+            aviso.textContent = resultado.mensagem || 'Erro ao carregar cadastros.';
+            listaCadastros.appendChild(aviso);
             return;
         }
 
@@ -78,11 +81,22 @@ function renderizarCadastros(cadastros) {
         const item = document.createElement('div');
         item.className = 'cadastro-item';
 
-        item.innerHTML = `
-            <p><strong>${cadastro.nome}</strong></p>
-            <p>RA: ${cadastro.ra || 'Não informado (professor/servidor)'}</p>
-            <p>E-mail: ${cadastro.email}</p>
-        `;
+        // textContent (e não innerHTML): o nome e o e-mail são digitados por
+        // quem se cadastra e nunca podem virar HTML/JavaScript na tela do admin.
+        const linhaNome = document.createElement('p');
+        const nomeForte = document.createElement('strong');
+        nomeForte.textContent = cadastro.nome;
+        linhaNome.appendChild(nomeForte);
+
+        const linhaRa = document.createElement('p');
+        linhaRa.textContent = 'RA: ' + (cadastro.ra || 'Não informado (professor/servidor)');
+
+        const linhaEmail = document.createElement('p');
+        linhaEmail.textContent = 'E-mail: ' + cadastro.email;
+
+        item.appendChild(linhaNome);
+        item.appendChild(linhaRa);
+        item.appendChild(linhaEmail);
 
         const selectTipo = document.createElement('select');
         selectTipo.className = 'select-tipo';

@@ -1065,3 +1065,13 @@ html.dark-mode .campo-motivo textarea {
 html.dark-mode .campo-motivo-contador {
     color: #94a3b8;
 }
+
+.motivo-cancelamento {
+    font-size: 13px;
+    color: #b91c1c;
+    font-style: italic;
+}
+
+html.dark-mode .motivo-cancelamento {
+    color: #fca5a5;
+}

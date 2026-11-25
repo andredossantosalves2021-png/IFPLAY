@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import bcrypt from 'bcryptjs'
-import { randomBytes, createHash } from 'node:crypto'
+import { randomBytes, createHash, randomUUID } from 'node:crypto'
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie'
 import { registrarRotasHistoricoFeedback } from './rotas-historico-feedback.js'
 
@@ -255,6 +255,15 @@ app.post('/cadastro', async (c) => {
             return c.json({ sucesso: false, mensagem: 'Preencha todos os campos.' }, 400)
         }
 
+        if (
+            typeof senha !== 'string' ||
+            typeof nome !== 'string' ||
+            typeof email !== 'string' ||
+            (ra != null && typeof ra !== 'string' && typeof ra !== 'number')
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Dados inválidos.' }, 400)
+        }
+
         const ehAluno = tipoCadastro !== 'PROFESSOR'
 
         if (ehAluno && !ra) {
@@ -263,15 +272,32 @@ app.post('/cadastro', async (c) => {
 
         const raLimpo = ehAluno ? String(ra).trim() : null
 
-        if (ehAluno && !/^\d+$/.test(raLimpo)) {
+        if (ehAluno && !/^\d{1,20}$/.test(raLimpo)) {
             return c.json({ sucesso: false, mensagem: 'O RA deve conter apenas números.' }, 400)
         }
 
-        const nomeLimpo = String(nome).trim()
-        const emailLimpo = String(email).trim()
+        // Nome: só letras (com acento), espaços, apóstrofo, ponto e hífen.
+        // Isso também impede que alguém cadastre HTML/JavaScript no lugar do nome.
+        const nomeLimpo = nome.trim().replace(/\s+/g, ' ')
+        const emailLimpo = email.trim().toLowerCase()
+
+        if (!/^[\p{L}][\p{L}\p{M} '.-]{1,99}$/u.test(nomeLimpo)) {
+            return c.json({ sucesso: false, mensagem: 'Digite um nome válido (só letras e espaços).' }, 400)
+        }
+
+        if (
+            emailLimpo.length > 254 ||
+            !/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(emailLimpo)
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Digite um e-mail válido.' }, 400)
+        }
 
         if (senha.length < 6) {
             return c.json({ sucesso: false, mensagem: 'A senha precisa ter pelo menos 6 caracteres.' }, 400)
+        }
+
+        if (Buffer.byteLength(senha, 'utf8') > 72) {
+            return c.json({ sucesso: false, mensagem: 'A senha pode ter no máximo 72 caracteres.' }, 400)
         }
 
         const senhaHash = await bcrypt.hash(senha, 10)
@@ -422,24 +448,101 @@ app.patch('/cadastros/:id', async (c) => {
 
 })
 
+// ---------- Limite de tentativas de login ----------
+// Fica na memória do servidor (zera se o Render reiniciar), o que já basta
+// para impedir alguém de testar milhares de senhas seguidas.
+const JANELA_TENTATIVAS_MS = 15 * 60 * 1000
+const MAX_FALHAS_POR_CONTA = 5
+const MAX_FALHAS_POR_IP = 30
+const falhasLogin = new Map()
+
+function obterIpCliente(c) {
+
+    // No Render, o último endereço do X-Forwarded-For é o que o próprio
+    // Render adicionou (o do cliente); os anteriores podem ser inventados.
+    const encaminhado = c.req.header('x-forwarded-for')
+
+    if (encaminhado) {
+        const partes = encaminhado.split(',').map((p) => p.trim()).filter(Boolean)
+        if (partes.length > 0) return partes[partes.length - 1]
+    }
+
+    return 'local'
+}
+
+function contarFalhas(chave) {
+
+    const registro = falhasLogin.get(chave)
+
+    if (!registro || Date.now() - registro.inicio > JANELA_TENTATIVAS_MS) {
+        falhasLogin.delete(chave)
+        return 0
+    }
+
+    return registro.quantidade
+}
+
+function registrarFalha(chave) {
+
+    const atual = contarFalhas(chave)
+
+    if (atual === 0) {
+        falhasLogin.set(chave, { quantidade: 1, inicio: Date.now() })
+    } else {
+        falhasLogin.get(chave).quantidade = atual + 1
+    }
+}
+
+setInterval(() => {
+    for (const [chave, registro] of falhasLogin) {
+        if (Date.now() - registro.inicio > JANELA_TENTATIVAS_MS) {
+            falhasLogin.delete(chave)
+        }
+    }
+}, 5 * 60 * 1000).unref()
+
+// Hash de mentira para comparar quando o usuário não existe: assim a resposta
+// demora o mesmo tempo e não dá para descobrir quais RAs/e-mails existem.
+const HASH_FALSO = bcrypt.hashSync('senha-que-ninguem-usa-' + randomBytes(8).toString('hex'), 10)
+
+const MENSAGEM_LOGIN_INVALIDO = 'RA/e-mail ou senha inválidos.'
+
 app.post('/login', async (c) => {
 
     try {
 
         const body = await c.req.json()
 
-        const identificador =
+        const identificadorBruto =
             String(body.identificador || '').trim()
 
         const senhaFornecida =
             String(body.senha || '')
 
-        if (!identificador || !senhaFornecida) {
+        if (!identificadorBruto || !senhaFornecida) {
             return c.json({ sucesso: false, mensagem: 'Informe o RA ou e-mail e a senha.' }, 400)
         }
 
         const ehEmail =
-            identificador.includes('@')
+            identificadorBruto.includes('@')
+
+        const identificador =
+            ehEmail
+                ? identificadorBruto.toLowerCase()
+                : identificadorBruto
+
+        const chaveConta = 'conta:' + identificador
+        const chaveIp = 'ip:' + obterIpCliente(c)
+
+        if (
+            contarFalhas(chaveConta) >= MAX_FALHAS_POR_CONTA ||
+            contarFalhas(chaveIp) >= MAX_FALHAS_POR_IP
+        ) {
+            return c.json({
+                sucesso: false,
+                mensagem: 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.'
+            }, 429)
+        }
 
         const {
             data: usuario,
@@ -470,35 +573,29 @@ app.post('/login', async (c) => {
             )
         }
 
-        if (!usuario) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário não encontrado'
-                },
-                404
-            )
-        }
-
         const senhaValida =
             await bcrypt.compare(
                 senhaFornecida,
-                usuario.senha
+                usuario ? usuario.senha : HASH_FALSO
             )
 
-        if (!senhaValida) {
+        // Mesma mensagem para "não existe" e "senha errada"
+        if (!usuario || !senhaValida) {
+
+            registrarFalha(chaveConta)
+            registrarFalha(chaveIp)
 
             return c.json(
                 {
                     sucesso: false,
                     mensagem:
-                        'RA ou senha inválidos'
+                        MENSAGEM_LOGIN_INVALIDO
                 },
                 401
             )
         }
+
+        falhasLogin.delete(chaveConta)
 
                 if (usuario.status_cadastro === 'PENDENTE') {
 
@@ -531,6 +628,16 @@ const tokenSessao = randomBytes(32).toString('hex')
         const expiraEm = new Date(
             Date.now() + 24 * 60 * 60 * 1000
         ).toISOString()
+
+        // Aproveita o login para apagar sessões vencidas (de qualquer pessoa)
+        const { error: erroLimpeza } = await supabaseAdmin
+            .from('sessoes')
+            .delete()
+            .lt('expira_em', new Date().toISOString())
+
+        if (erroLimpeza) {
+            console.error('Erro ao limpar sessões vencidas:', erroLimpeza.message)
+        }
 
         const { error: erroSessao } = await supabaseAdmin
             .from('sessoes')
@@ -878,6 +985,36 @@ app.patch('/reservas/:id', async (c) => {
             )
         }
 
+        // Só reservas pendentes podem ser aprovadas (uma cancelada não "volta"
+        // sem passar de novo pela checagem de conflito)
+        if (
+            novoStatus === 'APROVADA' &&
+            reserva.status !== 'PENDENTE'
+        ) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        reserva.status === 'APROVADA'
+                            ? 'Esta reserva já foi aprovada.'
+                            : 'Esta reserva foi cancelada e não pode ser aprovada.'
+                },
+                409
+            )
+        }
+
+        if (
+            novoStatus === 'CANCELADA' &&
+            reserva.status === 'CANCELADA'
+        ) {
+
+            return c.json({
+                sucesso: true,
+                reserva: reserva
+            })
+        }
+
         // Administrador cancelando a reserva de outra pessoa: precisa explicar o motivo
         const adminCancelandoDeOutro =
             novoStatus === 'CANCELADA' &&
@@ -906,11 +1043,31 @@ app.patch('/reservas/:id', async (c) => {
             .from('reserva')
             .update({
                 status:
-                    novoStatus
+                    novoStatus,
+
+                atualizado_por:
+                    usuarioAutenticado.id_usuario,
+
+                atualizado_em:
+                    new Date().toISOString(),
+
+                motivo_cancelamento:
+                    novoStatus === 'CANCELADA'
+                        ? (
+                            adminCancelandoDeOutro
+                                ? motivoCancelamento
+                                : 'Cancelada por quem fez a reserva.'
+                        )
+                        : null
             })
             .eq(
                 'id_reserva',
                 id
+            )
+            // Só muda se ninguém mudou antes (dois admins ao mesmo tempo)
+            .eq(
+                'status',
+                reserva.status
             )
             .select()
 
@@ -928,10 +1085,21 @@ app.patch('/reservas/:id', async (c) => {
             )
         }
 
-        // Avisa o dono da reserva (só na primeira vez que ela é cancelada)
+        if (!data || data.length === 0) {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem:
+                        'Outra pessoa alterou esta reserva agora há pouco. Atualize a página.'
+                },
+                409
+            )
+        }
+
+        // Avisa o dono da reserva quando um administrador cancela
         if (
-            adminCancelandoDeOutro &&
-            reserva.status !== 'CANCELADA'
+            adminCancelandoDeOutro
         ) {
 
             const mensagemAviso =
@@ -1132,6 +1300,279 @@ const HORARIO_ABERTURA_MINUTOS = 7 * 60
 const HORARIO_FECHAMENTO_MINUTOS = 21 * 60
 const DURACAO_MAXIMA_MINUTOS = 4 * 60
 
+// ---------- Criação de reservas (única e recorrente) ----------
+// As duas telas usam a mesma função, então as regras são as mesmas:
+// horário de funcionamento, limite de 4h, conflitos e prioridade de
+// professor/administrador sobre aluno. Tudo é conferido ANTES de gravar,
+// e todas as datas entram num único INSERT: ou cria tudo, ou nada.
+
+const TIPOS_RESERVA = ['JOGO_LIVRE', 'AULA', 'EVENTO']
+const REGEX_DATA = /^\d{4}-\d{2}-\d{2}$/
+const REGEX_HORA = /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/
+const MAX_DATAS_RECORRENTES = 16
+const MOTIVO_PRIORIDADE = 'Cancelada pela prioridade de uma reserva de professor ou administrador.'
+
+function agoraEmBrasilia() {
+
+    const agora = new Date()
+
+    return {
+        hoje: agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
+        hora: agora.toLocaleTimeString('en-GB', {
+            timeZone: 'America/Sao_Paulo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        })
+    }
+}
+
+function dataEhValida(data) {
+
+    if (!REGEX_DATA.test(String(data))) {
+        return false
+    }
+
+    const [ano, mes, dia] = String(data).split('-').map(Number)
+    const teste = new Date(Date.UTC(ano, mes - 1, dia))
+
+    return (
+        teste.getUTCFullYear() === ano &&
+        teste.getUTCMonth() === mes - 1 &&
+        teste.getUTCDate() === dia
+    )
+}
+
+function listaDeDatas(datas) {
+    return datas.map(formatarDataBrasileira).join(', ')
+}
+
+function resposta(status, corpo) {
+    return { status, corpo }
+}
+
+async function criarReservas(usuarioAutenticado, datas, dados) {
+
+    const { horario_inicio, horario_fim } = dados
+    const modalidade = typeof dados.modalidade === 'string' ? dados.modalidade.trim() : ''
+    const tipoReserva = TIPOS_RESERVA.includes(dados.tipo_reserva) ? dados.tipo_reserva : 'JOGO_LIVRE'
+    const recorrente = datas.length > 1 || Boolean(dados.recorrente)
+
+    if (datas.length === 0 || !horario_inicio || !horario_fim || !modalidade) {
+        return resposta(400, { sucesso: false, mensagem: 'Preencha todos os campos.' })
+    }
+
+    if (modalidade.length > 60) {
+        return resposta(400, { sucesso: false, mensagem: 'O nome da atividade pode ter no máximo 60 caracteres.' })
+    }
+
+    if (
+        !datas.every(dataEhValida) ||
+        !REGEX_HORA.test(String(horario_inicio)) ||
+        !REGEX_HORA.test(String(horario_fim)) ||
+        horarioParaMinutos(horario_inicio) >= horarioParaMinutos(horario_fim)
+    ) {
+        return resposta(400, { sucesso: false, mensagem: 'Data ou horário inválido.' })
+    }
+
+    const novoInicio = horarioParaMinutos(horario_inicio)
+    const novoFim = horarioParaMinutos(horario_fim)
+
+    if (novoInicio < HORARIO_ABERTURA_MINUTOS || novoFim > HORARIO_FECHAMENTO_MINUTOS) {
+        return resposta(400, { sucesso: false, mensagem: 'A quadra pode ser reservada das 07:00 às 21:00.' })
+    }
+
+    if (novoFim - novoInicio > DURACAO_MAXIMA_MINUTOS) {
+        return resposta(400, { sucesso: false, mensagem: 'A reserva pode durar no máximo 4 horas.' })
+    }
+
+    const { hoje, hora } = agoraEmBrasilia()
+
+    const datasNoPassado = datas.filter((data) =>
+        data < hoje ||
+        (data === hoje && novoInicio < horarioParaMinutos(hora))
+    )
+
+    if (datasNoPassado.length > 0) {
+        return resposta(400, {
+            sucesso: false,
+            mensagem: datas.length === 1
+                ? 'Não é possível reservar um horário que já passou.'
+                : 'Estas datas já passaram nesse horário: ' + listaDeDatas(datasNoPassado) + '. Nada foi criado.'
+        })
+    }
+
+    const possuiPrioridade =
+        usuarioAutenticado.tipo_usuario === 'PROFESSOR' ||
+        usuarioAutenticado.tipo_usuario === 'ADMINISTRADOR'
+
+    const { data: reservasDasDatas, error: erroConflito } = await supabaseAdmin
+        .from('reserva')
+        .select('id_reserva, data_reserva, horario_inicio, horario_fim, status, modalidade, id_usuario, usuario(tipo_usuario)')
+        .in('data_reserva', datas)
+        .neq('status', 'CANCELADA')
+
+    if (erroConflito) {
+        console.error('Erro ao verificar conflito:', erroConflito)
+        return resposta(500, { sucesso: false, mensagem: 'Não foi possível verificar a disponibilidade do horário.' })
+    }
+
+    const conflitantes = (reservasDasDatas || []).filter((existente) =>
+        datas.includes(String(existente.data_reserva)) &&
+        horarioParaMinutos(existente.horario_inicio) < novoFim &&
+        horarioParaMinutos(existente.horario_fim) > novoInicio
+    )
+
+    const conflitosQueBloqueiam = possuiPrioridade
+        ? conflitantes.filter((r) => !r.usuario || r.usuario.tipo_usuario !== 'ALUNO')
+        : conflitantes
+
+    if (conflitosQueBloqueiam.length > 0) {
+
+        const datasBloqueadas = [...new Set(conflitosQueBloqueiam.map((r) => String(r.data_reserva)))].sort()
+
+        let mensagem
+
+        if (datas.length > 1) {
+            mensagem = 'Já existe reserva nesse horário em: ' + listaDeDatas(datasBloqueadas) + '. Nada foi criado.'
+        } else if (possuiPrioridade) {
+            mensagem = 'Este horário já possui uma reserva de professor ou administrador.'
+        } else {
+            mensagem = 'Este horário já possui uma reserva. Escolha outro período.'
+        }
+
+        return resposta(409, { sucesso: false, mensagem, datas_com_conflito: datasBloqueadas })
+    }
+
+    // Reservas de aluno que vão ceder lugar à reserva prioritária
+    const reservasDeAlunos = possuiPrioridade ? conflitantes : []
+    const agoraIso = new Date().toISOString()
+
+    if (reservasDeAlunos.length > 0) {
+
+        const { error: erroCancelamento } = await supabaseAdmin
+            .from('reserva')
+            .update({
+                status: 'CANCELADA',
+                motivo_cancelamento: MOTIVO_PRIORIDADE,
+                atualizado_por: usuarioAutenticado.id_usuario,
+                atualizado_em: agoraIso
+            })
+            .in('id_reserva', reservasDeAlunos.map((r) => r.id_reserva))
+
+        if (erroCancelamento) {
+            console.error('Erro ao cancelar reservas dos alunos:', erroCancelamento)
+            return resposta(500, { sucesso: false, mensagem: 'Não foi possível aplicar a prioridade da reserva.' })
+        }
+    }
+
+    const status = usuarioAutenticado.tipo_usuario === 'ALUNO' ? 'PENDENTE' : 'APROVADA'
+    const idRecorrencia = recorrente ? randomUUID() : null
+
+    const { data: novasReservas, error: erroNovaReserva } = await supabaseAdmin
+        .from('reserva')
+        .insert(datas.map((data) => ({
+            data_reserva: data,
+            horario_inicio,
+            horario_fim,
+            modalidade,
+            status,
+            tipo_reserva: tipoReserva,
+            recorrente,
+            id_usuario: usuarioAutenticado.id_usuario,
+            id_recorrencia: idRecorrencia
+        })))
+        .select()
+
+    if (erroNovaReserva) {
+
+        console.error(erroNovaReserva)
+
+        // Devolve as reservas dos alunos ao que eram antes
+        for (const original of reservasDeAlunos) {
+
+            const { error: erroRestauracao } = await supabaseAdmin
+                .from('reserva')
+                .update({
+                    status: original.status,
+                    motivo_cancelamento: null,
+                    atualizado_por: null,
+                    atualizado_em: null
+                })
+                .eq('id_reserva', original.id_reserva)
+
+            if (erroRestauracao) {
+                console.error('Erro ao restaurar reserva:', original.id_reserva, erroRestauracao)
+            }
+        }
+
+        // 23505 = índice único; 23P01 = restrição de sobreposição do banco
+        if (erroNovaReserva.code === '23505' || erroNovaReserva.code === '23P01') {
+            return resposta(409, {
+                sucesso: false,
+                mensagem: datas.length > 1
+                    ? 'Alguém reservou um desses horários agora há pouco. Nada foi criado; tente de novo.'
+                    : 'Este horário já possui uma reserva. Escolha outro período.'
+            })
+        }
+
+        return resposta(400, { sucesso: false, mensagem: 'Não foi possível criar a reserva.' })
+    }
+
+    // Cada aluno recebe o aviso com o horário da reserva DELE
+    if (reservasDeAlunos.length > 0) {
+
+        const avisos = reservasDeAlunos.map((reserva) => ({
+            mensagem:
+                'Sua reserva de ' +
+                (reserva.modalidade || 'quadra') +
+                ' do dia ' +
+                formatarDataBrasileira(reserva.data_reserva) +
+                ', das ' +
+                formatarHorario(reserva.horario_inicio) +
+                ' às ' +
+                formatarHorario(reserva.horario_fim) +
+                ', foi cancelada devido à prioridade de uma reserva institucional.',
+            tipo: 'RESERVA_CANCELADA',
+            lida: false,
+            id_usuario: reserva.id_usuario
+        }))
+
+        const { error: erroNotificacao } = await supabaseAdmin
+            .from('notificacao')
+            .insert(avisos)
+
+        if (erroNotificacao) {
+            console.error('Erro ao criar notificações:', erroNotificacao)
+        }
+    }
+
+    // Reserva de aluno chega como pendente: avisa os administradores
+    if (status === 'PENDENTE') {
+
+        await notificarAdministradores(
+            (usuarioAutenticado.nome || 'Um aluno') +
+            ' pediu uma reserva de ' +
+            modalidade +
+            (datas.length === 1
+                ? ' para o dia ' + formatarDataBrasileira(datas[0])
+                : ' para os dias ' + listaDeDatas(datas)) +
+            ', das ' +
+            formatarHorario(horario_inicio) +
+            ' às ' +
+            formatarHorario(horario_fim) +
+            '. Aprove ou recuse na tela de Reservas.',
+            'RESERVA_PENDENTE'
+        )
+    }
+
+    return resposta(200, {
+        sucesso: true,
+        reserva: novasReservas[0],
+        reservas: novasReservas
+    })
+}
+
 app.post('/reservas', async (c) => {
 
     try {
@@ -1139,527 +1580,61 @@ app.post('/reservas', async (c) => {
         const usuarioAutenticado = await obterUsuarioAutenticado(c)
 
         if (!usuarioAutenticado) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'É necessário fazer login.'
-                },
-                401
-            )
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
         }
 
-        const id_usuario =
-            usuarioAutenticado.id_usuario
-
-        const body =
-            await c.req.json()
-
-        const {
-            data_reserva,
-            horario_inicio,
-            horario_fim,
-            modalidade,
-            tipo_reserva,
-            recorrente,
-            id_recorrencia
-        } = body
-
-        if (
-            !data_reserva ||
-            !horario_inicio ||
-            !horario_fim ||
-            !modalidade ||
-            !id_usuario
-        ) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Preencha todos os campos.'
-                },
-                400
-            )
-        }
-
-        if (
-            !/^\d{4}-\d{2}-\d{2}$/.test(String(data_reserva)) ||
-            !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(String(horario_inicio)) ||
-            !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(String(horario_fim)) ||
-            horarioParaMinutos(horario_inicio) >= horarioParaMinutos(horario_fim)
-        ) {
-            return c.json({ sucesso: false, mensagem: 'Data ou horário inválido.' }, 400)
-        }
-
-        if (
-            horarioParaMinutos(horario_inicio) < HORARIO_ABERTURA_MINUTOS ||
-            horarioParaMinutos(horario_fim) > HORARIO_FECHAMENTO_MINUTOS
-        ) {
-            return c.json({ sucesso: false, mensagem: 'A quadra pode ser reservada das 07:00 às 21:00.' }, 400)
-        }
-
-        if (
-            horarioParaMinutos(horario_fim) - horarioParaMinutos(horario_inicio) >
-            DURACAO_MAXIMA_MINUTOS
-        ) {
-            return c.json({ sucesso: false, mensagem: 'A reserva pode durar no máximo 4 horas.' }, 400)
-        }
-
-        const agoraBrasilia = new Date()
-
-        const hojeBrasilia = agoraBrasilia.toLocaleDateString('en-CA', {
-            timeZone: 'America/Sao_Paulo'
-        })
-
-        const horaBrasilia = agoraBrasilia.toLocaleTimeString('en-GB', {
-            timeZone: 'America/Sao_Paulo',
-            hour: '2-digit',
-            minute: '2-digit',
-            hourCycle: 'h23'
-        })
-
-        if (
-            String(data_reserva) < hojeBrasilia ||
-            (
-                String(data_reserva) === hojeBrasilia &&
-                horarioParaMinutos(horario_inicio) < horarioParaMinutos(horaBrasilia)
-            )
-        ) {
-            return c.json({ sucesso: false, mensagem: 'Não é possível reservar um horário que já passou.' }, 400)
-        }
-
-        const {
-            data: criador,
-            error: erroCriador
-        } = await supabaseAdmin
-            .from('usuario')
-            .select('tipo_usuario')
-            .eq(
-                'id_usuario',
-                id_usuario
-            )
-            .maybeSingle()
-
-        if (
-            erroCriador ||
-            !criador
-        ) {
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Usuário inválido.'
-                },
-                400
-            )
-        }
-
-        const {
-            data: reservasDoDia,
-            error: erroConflito
-        } = await supabaseAdmin
-            .from('reserva')
-            .select(
-                'id_reserva, horario_inicio, horario_fim, status, id_usuario, usuario(tipo_usuario)'
-            )
-            .eq(
-                'data_reserva',
-                data_reserva
-            )
-            .neq(
-                'status',
-                'CANCELADA'
-            )
-
-        if (erroConflito) {
-
-            console.error(
-                'Erro ao verificar conflito:',
-                erroConflito
-            )
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        'Não foi possível verificar a disponibilidade do horário.'
-                },
-                500
-            )
-        }
-
-        const novoInicio =
-            horarioParaMinutos(
-                horario_inicio
-            )
-
-        const novoFim =
-            horarioParaMinutos(
-                horario_fim
-            )
-
-        const reservasConflitantes =
-            reservasDoDia.filter(
-                function (reservaExistente) {
-
-                    const inicioExistente =
-                        horarioParaMinutos(
-                            reservaExistente.horario_inicio
-                        )
-
-                    const fimExistente =
-                        horarioParaMinutos(
-                            reservaExistente.horario_fim
-                        )
-
-                    return (
-                        inicioExistente <
-                            novoFim &&
-                        fimExistente >
-                            novoInicio
-                    )
-                }
-            )
-
-        const possuiPrioridade =
-            criador.tipo_usuario ===
-                'PROFESSOR' ||
-            criador.tipo_usuario ===
-                'ADMINISTRADOR'
-
-        if (
-            reservasConflitantes.length >
-            0
-        ) {
-
-            if (!possuiPrioridade) {
-
-                return c.json(
-                    {
-                        sucesso: false,
-                        mensagem:
-                            'Este horário já possui uma reserva. Escolha outro período.'
-                    },
-                    409
-                )
-            }
-
-            const existeConflitoPrioritario =
-                reservasConflitantes.some(
-                    function (
-                        reservaExistente
-                    ) {
-
-                        return (
-                            !reservaExistente.usuario ||
-                            reservaExistente.usuario.tipo_usuario !==
-                                'ALUNO'
-                        )
-                    }
-                )
-
-            if (
-                existeConflitoPrioritario
-            ) {
-
-                return c.json(
-                    {
-                        sucesso: false,
-                        mensagem:
-                            'Este horário já possui uma reserva de professor ou administrador.'
-                    },
-                    409
-                )
-            }
-        }
-
-        const status =
-            criador.tipo_usuario ===
-            'ALUNO'
-                ? 'PENDENTE'
-                : 'APROVADA'
-
-        const reservasParaRestaurar =
-            reservasConflitantes.map(
-                function (reserva) {
-
-                    return {
-                        id_reserva:
-                            reserva.id_reserva,
-
-                        status:
-                            reserva.status,
-
-                        id_usuario:
-                            reserva.id_usuario
-                    }
-                }
-            )
-
-        if (
-            possuiPrioridade &&
-            reservasParaRestaurar.length >
-                0
-        ) {
-
-            const idsReservasAlunos =
-                reservasParaRestaurar.map(
-                    function (reserva) {
-                        return reserva.id_reserva
-                    }
-                )
-
-            const {
-                error: erroCancelamento
-            } = await supabaseAdmin
-                .from('reserva')
-                .update({
-                    status:
-                        'CANCELADA'
-                })
-                .in(
-                    'id_reserva',
-                    idsReservasAlunos
-                )
-
-            if (erroCancelamento) {
-
-                console.error(
-                    'Erro ao cancelar reservas dos alunos:',
-                    erroCancelamento
-                )
-
-                return c.json(
-                    {
-                        sucesso: false,
-                        mensagem:
-                            'Não foi possível aplicar a prioridade da reserva.'
-                    },
-                    500
-                )
-            }
-        }
-
-        const {
-            data: novaReserva,
-            error: erroNovaReserva
-        } = await supabaseAdmin
-            .from('reserva')
-            .insert([
-                {
-                    data_reserva:
-                        data_reserva,
-
-                    horario_inicio:
-                        horario_inicio,
-
-                    horario_fim:
-                        horario_fim,
-
-                    modalidade:
-                        modalidade,
-
-                    status:
-                        status,
-
-                    tipo_reserva:
-                        tipo_reserva,
-
-                    recorrente:
-                        recorrente,
-
-                    id_usuario:
-                        id_usuario,
-
-                    id_recorrencia:
-                        id_recorrencia ||
-                        null
-                }
-            ])
-            .select()
-            .maybeSingle()
-
-        if (erroNovaReserva) {
-
-            console.error(
-                erroNovaReserva
-            )
-
-            if (
-                reservasParaRestaurar.length >
-                0
-            ) {
-
-                for (
-                    const reservaOriginal
-                    of reservasParaRestaurar
-                ) {
-
-                    const {
-                        error:
-                            erroRestauracao
-                    } = await supabaseAdmin
-                        .from('reserva')
-                        .update({
-                            status:
-                                reservaOriginal.status
-                        })
-                        .eq(
-                            'id_reserva',
-                            reservaOriginal.id_reserva
-                        )
-
-                    if (erroRestauracao) {
-
-                        console.error(
-                            'Erro ao restaurar reserva:',
-                            reservaOriginal.id_reserva,
-                            erroRestauracao
-                        )
-                    }
-                }
-            }
-
-            if (
-                erroNovaReserva.code ===
-                '23505'
-            ) {
-
-                return c.json(
-                    {
-                        sucesso: false,
-                        mensagem:
-                            'Este horário já possui uma reserva. Escolha outro período.'
-                    },
-                    409
-                )
-            }
-
-            return c.json(
-                {
-                    sucesso: false,
-                    mensagem:
-                        erroNovaReserva.message
-                },
-                400
-            )
-        }
-
-        if (
-            possuiPrioridade &&
-            reservasParaRestaurar.length >
-                0
-        ) {
-
-            const usuariosNotificados =
-                [
-                    ...new Set(
-                        reservasParaRestaurar.map(
-                            function (
-                                reserva
-                            ) {
-
-                                return Number(
-                                    reserva.id_usuario
-                                )
-                            }
-                        )
-                    )
-                ]
-
-            const mensagem =
-                'Sua reserva de ' +
-                formatarDataBrasileira(
-                    data_reserva
-                ) +
-                ', das ' +
-                formatarHorario(
-                    horario_inicio
-                ) +
-                ' às ' +
-                formatarHorario(
-                    horario_fim
-                ) +
-                ', foi cancelada devido à prioridade de uma reserva institucional.'
-
-            const notificacoes =
-                usuariosNotificados.map(
-                    function (
-                        idUsuarioAluno
-                    ) {
-
-                        return {
-                            mensagem:
-                                mensagem,
-
-                            tipo:
-                                'RESERVA_CANCELADA',
-
-                            lida:
-                                false,
-
-                            id_usuario:
-                                idUsuarioAluno
-                        }
-                    }
-                )
-
-            const {
-                error: erroNotificacao
-            } = await supabaseAdmin
-                .from('notificacao')
-                .insert(
-                    notificacoes
-                )
-
-            if (erroNotificacao) {
-
-                console.error(
-                    'Erro ao criar notificações:',
-                    erroNotificacao
-                )
-            }
-        }
-
-        // Reserva de aluno chega como pendente: avisa os administradores
-        if (status === 'PENDENTE') {
-
-            await notificarAdministradores(
-                (usuarioAutenticado.nome || 'Um aluno') +
-                ' pediu uma reserva de ' +
-                modalidade +
-                ' para o dia ' +
-                formatarDataBrasileira(data_reserva) +
-                ', das ' +
-                formatarHorario(horario_inicio) +
-                ' às ' +
-                formatarHorario(horario_fim) +
-                '. Aprove ou recuse na tela de Reservas.',
-                'RESERVA_PENDENTE'
-            )
-        }
-
-        return c.json({
-            sucesso: true,
-            reserva:
-                novaReserva
-        })
+        const body = await c.req.json()
+
+        const { status, corpo } = await criarReservas(
+            usuarioAutenticado,
+            body.data_reserva ? [String(body.data_reserva)] : [],
+            { ...body, recorrente: false }
+        )
+
+        return c.json(corpo, status)
 
     } catch (erro) {
-
         console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
+    }
+})
 
-        return c.json(
-            {
-                sucesso: false,
-                mensagem:
-                    'Erro interno do servidor.'
-            },
-            500
+// Reserva recorrente: todas as datas de uma vez (só professor e administrador)
+app.post('/reservas/recorrente', async (c) => {
+
+    try {
+
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
+        }
+
+        if (usuarioAutenticado.tipo_usuario === 'ALUNO') {
+            return c.json({ sucesso: false, mensagem: 'Apenas professores e administradores podem criar reservas recorrentes.' }, 403)
+        }
+
+        const body = await c.req.json()
+
+        const datas = Array.isArray(body.datas)
+            ? [...new Set(body.datas.map(String))].sort()
+            : []
+
+        if (datas.length === 0 || datas.length > MAX_DATAS_RECORRENTES) {
+            return c.json({ sucesso: false, mensagem: 'Escolha entre 1 e 16 semanas.' }, 400)
+        }
+
+        const { status, corpo } = await criarReservas(
+            usuarioAutenticado,
+            datas,
+            { ...body, recorrente: true }
         )
+
+        return c.json(corpo, status)
+
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
     }
 })
 
@@ -2417,6 +2392,90 @@ app.patch('/reclamacoes/:id', async (c) => {
 })
 
 registrarRotasHistoricoFeedback(app, supabaseAdmin, obterUsuarioAutenticado)
+
+// ---------- Pendentes que passaram do horário ----------
+// Uma reserva pendente que terminou sem ser analisada é cancelada sozinha,
+// libera o histórico do admin e o aluno recebe um aviso.
+async function expirarPendentesVencidas() {
+
+    try {
+
+        const { hoje, hora } = agoraEmBrasilia()
+
+        const { data: pendentes, error } = await supabaseAdmin
+            .from('reserva')
+            .select('id_reserva, data_reserva, horario_inicio, horario_fim, modalidade, id_usuario')
+            .eq('status', 'PENDENTE')
+            .lte('data_reserva', hoje)
+
+        if (error) {
+            console.error('Erro ao buscar pendentes vencidas:', error)
+            return
+        }
+
+        const vencidas = (pendentes || []).filter((r) =>
+            String(r.data_reserva) < hoje ||
+            horarioParaMinutos(r.horario_fim) <= horarioParaMinutos(hora)
+        )
+
+        if (vencidas.length === 0) {
+            return
+        }
+
+        const { data: canceladas, error: erroUpdate } = await supabaseAdmin
+            .from('reserva')
+            .update({
+                status: 'CANCELADA',
+                motivo_cancelamento: 'Não foi analisada por um administrador antes do horário.',
+                atualizado_em: new Date().toISOString()
+            })
+            .in('id_reserva', vencidas.map((r) => r.id_reserva))
+            .eq('status', 'PENDENTE')
+            .select('id_reserva')
+
+        if (erroUpdate) {
+            console.error('Erro ao cancelar pendentes vencidas:', erroUpdate)
+            return
+        }
+
+        const idsCancelados = new Set((canceladas || []).map((r) => r.id_reserva))
+
+        const avisos = vencidas
+            .filter((r) => idsCancelados.has(r.id_reserva))
+            .map((r) => ({
+                mensagem:
+                    'Sua reserva de ' +
+                    (r.modalidade || 'quadra') +
+                    ' do dia ' +
+                    formatarDataBrasileira(r.data_reserva) +
+                    ', das ' +
+                    formatarHorario(r.horario_inicio) +
+                    ' às ' +
+                    formatarHorario(r.horario_fim) +
+                    ', não foi analisada a tempo e foi cancelada.',
+                tipo: 'RESERVA_CANCELADA',
+                lida: false,
+                id_usuario: r.id_usuario
+            }))
+
+        if (avisos.length > 0) {
+
+            const { error: erroAviso } = await supabaseAdmin
+                .from('notificacao')
+                .insert(avisos)
+
+            if (erroAviso) {
+                console.error('Erro ao avisar pendentes vencidas:', erroAviso)
+            }
+        }
+
+    } catch (erro) {
+        console.error('Erro ao expirar pendentes:', erro)
+    }
+}
+
+setTimeout(expirarPendentesVencidas, 30 * 1000)
+setInterval(expirarPendentesVencidas, 10 * 60 * 1000)
 
 serve(
     {

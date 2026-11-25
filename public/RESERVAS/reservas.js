@@ -650,6 +650,28 @@ function criarCardIndividual(
     );
 
     if (
+        reserva.status === 'CANCELADA' &&
+        reserva.motivo_cancelamento
+    ) {
+
+        const motivo =
+            document.createElement(
+                'p'
+            );
+
+        motivo.className =
+            'motivo-cancelamento';
+
+        motivo.textContent =
+            'Motivo: ' +
+            reserva.motivo_cancelamento;
+
+        item.appendChild(
+            motivo
+        );
+    }
+
+    if (
         filtroAtual ===
             'pendentes' &&
         usuario.tipo_usuario ===
