@@ -76,7 +76,8 @@ const btnReclamacoes =
     document.getElementById('btnReclamacoes')
 
 if (usuario.tipo_usuario === 'ADMINISTRADOR') {
-    document.getElementById('linkCadastros').style.display = '';
+    document.getElementById('linkUsuarios').style.display = '';
+    document.getElementById('linkBloqueios').style.display = '';
 }
 
 
@@ -138,7 +139,8 @@ const ROTULOS_TIPO_NOTIFICACAO = {
     RESERVA_CANCELADA: 'Reserva cancelada',
     RECLAMACAO_NOVA: 'Nova reclamação',
     CADASTRO_PENDENTE: 'Cadastro para aprovar',
-    FEEDBACK_PROBLEMA: 'Avaliação com problema'
+    FEEDBACK_PROBLEMA: 'Avaliação com problema',
+    RESERVA_LEMBRETE: 'Lembrete'
 }
 
 // Abas do administrador. Cada tipo de notificação cai em uma aba;
@@ -165,7 +167,7 @@ let categoriaSelecionada = 'todas'
 const DESTINOS_ADMIN = {
     RESERVA_PENDENTE: '../RESERVAS/reservas.html?filtro=pendentes',
     RECLAMACAO_NOVA: '../RECLAMACOES/reclamacoes.html',
-    CADASTRO_PENDENTE: '../CADASTROS/cadastros.html',
+    CADASTRO_PENDENTE: '../USUARIOS/usuarios.html?aba=pendentes',
     FEEDBACK_PROBLEMA: '../HISTORICO/historico.html'
 }
 
@@ -1148,3 +1150,146 @@ setInterval(
     carregarNotificacoes,
     30000
 )
+// ---------- Endereço por tela (#reservas, #agendar...) ----------
+// O dashboard mostra as telas dentro de um iframe. O endereço da página
+// passa a dizer qual tela está aberta, então recarregar (F5) volta para a
+// mesma tela e dá para mandar o link de uma tela específica.
+
+const ROTAS_DASHBOARD = {
+    calendario: '/CALENDARIO/calendario.html',
+    agendar: '/AGENDA/agenda.html',
+    reservas: '/RESERVAS/reservas.html',
+    'reservas-pendentes': '/RESERVAS/reservas.html?filtro=pendentes',
+    reclamacoes: '/RECLAMACOES/reclamacoes.html',
+    cadastros: '/CADASTROS/cadastros.html',
+    historico: '/HISTORICO/historico.html',
+    usuarios: '/USUARIOS/usuarios.html?aba=pendentes',
+    'usuarios-todos': '/USUARIOS/usuarios.html?aba=todos',
+    bloqueios: '/BLOQUEIOS/bloqueios.html'
+}
+
+const ROTAS_SO_ADMIN = ['cadastros', 'historico', 'usuarios', 'usuarios-todos', 'bloqueios']
+
+function rotaPermitida(nome) {
+    return (
+        Object.prototype.hasOwnProperty.call(ROTAS_DASHBOARD, nome) &&
+        (ehAdministrador || !ROTAS_SO_ADMIN.includes(nome))
+    )
+}
+
+function nomeDaRotaPeloEndereco(caminhoComBusca) {
+
+    // Primeiro a correspondência exata (com ?filtro=...), depois só o caminho
+    const exata = Object.keys(ROTAS_DASHBOARD).find(
+        (nome) => ROTAS_DASHBOARD[nome] === caminhoComBusca
+    )
+
+    if (exata) {
+        return exata
+    }
+
+    const caminho = caminhoComBusca.split('?')[0]
+
+    return Object.keys(ROTAS_DASHBOARD).find(
+        (nome) => ROTAS_DASHBOARD[nome] === caminho
+    ) || null
+}
+
+function marcarBotaoAtivo(caminho) {
+
+    document.querySelectorAll('.action-bar .btn-action').forEach(
+        function (link) {
+
+            let destino = ''
+
+            try {
+                destino = new URL(link.getAttribute('href'), window.location.href).pathname
+            } catch (erro) {
+                destino = ''
+            }
+
+            link.classList.toggle('ativo', destino === caminho)
+        }
+    )
+}
+
+function abrirRotaDoEndereco() {
+
+    let nome = ''
+
+    try {
+        nome = decodeURIComponent(window.location.hash.slice(1))
+    } catch (erro) {
+        nome = ''
+    }
+
+    if (!nome || !rotaPermitida(nome)) {
+
+        // Endereço inventado ou sem permissão: não abre nada e volta a
+        // mostrar no endereço a tela que já está aberta
+        if (nome) {
+            let atualNome = null
+            try {
+                atualNome = nomeDaRotaPeloEndereco(iframe.contentWindow.location.pathname + iframe.contentWindow.location.search)
+            } catch (erro) {
+                atualNome = null
+            }
+            const hashAtual = atualNome && atualNome !== 'calendario' ? '#' + atualNome : ''
+            history.replaceState(null, '', window.location.pathname + window.location.search + hashAtual)
+        }
+
+        return false
+    }
+
+    let atual = ''
+
+    try {
+        atual = iframe.contentWindow.location.pathname + iframe.contentWindow.location.search
+    } catch (erro) {
+        atual = ''
+    }
+
+    if (atual !== ROTAS_DASHBOARD[nome]) {
+        iframe.src = '..' + ROTAS_DASHBOARD[nome]
+    }
+
+    return true
+}
+
+iframe.addEventListener(
+    'load',
+    function () {
+
+        let caminho = ''
+        let busca = ''
+
+        try {
+            caminho = iframe.contentWindow.location.pathname
+            busca = iframe.contentWindow.location.search
+        } catch (erro) {
+            return
+        }
+
+        // Sessão expirou: o servidor mandou o iframe para o login
+        if (caminho === '/' || caminho === '/index.html') {
+            localStorage.removeItem('usuario')
+            window.location.replace('../index.html')
+            return
+        }
+
+        marcarBotaoAtivo(caminho)
+
+        const nome = nomeDaRotaPeloEndereco(caminho + busca)
+        const novoHash = nome && nome !== 'calendario' ? '#' + nome : ''
+
+        if (window.location.hash !== novoHash) {
+            // replaceState: não cria entrada extra no histórico (o próprio
+            // iframe já cria, e o botão voltar continua funcionando)
+            history.replaceState(null, '', window.location.pathname + window.location.search + novoHash)
+        }
+    }
+)
+
+window.addEventListener('hashchange', abrirRotaDoEndereco)
+
+abrirRotaDoEndereco()

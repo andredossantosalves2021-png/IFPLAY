@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 import { randomBytes, createHash, randomUUID } from 'node:crypto'
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie'
 import { registrarRotasHistoricoFeedback } from './rotas-historico-feedback.js'
+import { registrarRotasContasBloqueios } from './rotas-contas-bloqueios.js'
 
 const app = new Hono()
 
@@ -53,12 +54,15 @@ const supabaseAdmin = createClient(
 const PAGINAS_PUBLICAS = new Set([
     '/',
     '/index.html',
-    '/cadastro/cadastro.html'
+    '/cadastro/cadastro.html',
+    '/redefinir/redefinir.html'
 ])
 
 const PAGINAS_ADMIN = new Set([
     '/cadastros/cadastros.html',
-    '/historico/historico.html'
+    '/historico/historico.html',
+    '/usuarios/usuarios.html',
+    '/bloqueios/bloqueios.html'
 ])
 
 function normalizarCaminho(caminho) {
@@ -603,6 +607,17 @@ app.post('/login', async (c) => {
                 {
                     sucesso: false,
                     mensagem: 'Seu cadastro ainda está aguardando aprovação de um administrador.'
+                },
+                403
+            )
+        }
+
+        if (usuario.status_cadastro === 'DESATIVADO') {
+
+            return c.json(
+                {
+                    sucesso: false,
+                    mensagem: 'Sua conta foi desativada. Procure a coordenação.'
                 },
                 403
             )
@@ -1343,6 +1358,62 @@ function dataEhValida(data) {
     )
 }
 
+// Limite de reservas por aluno: no máximo 3 por semana (segunda a domingo),
+// contando pendentes e aprovadas.
+const LIMITE_RESERVAS_SEMANA_ALUNO = 3
+
+function semanaDaData(data) {
+
+    const [ano, mes, dia] = String(data).split('-').map(Number)
+    const base = new Date(Date.UTC(ano, mes - 1, dia))
+    const diasDesdeSegunda = (base.getUTCDay() + 6) % 7
+
+    const segunda = new Date(base)
+    segunda.setUTCDate(base.getUTCDate() - diasDesdeSegunda)
+
+    const domingo = new Date(segunda)
+    domingo.setUTCDate(segunda.getUTCDate() + 6)
+
+    const paraTexto = (d) => d.toISOString().slice(0, 10)
+
+    return { inicio: paraTexto(segunda), fim: paraTexto(domingo) }
+}
+
+// Procura um bloqueio que pegue alguma das datas no horário pedido
+async function encontrarBloqueio(datas, inicioMinutos, fimMinutos) {
+
+    const ordenadas = [...datas].sort()
+
+    const { data: bloqueios, error } = await supabaseAdmin
+        .from('bloqueio')
+        .select('id_bloqueio, data_inicio, data_fim, horario_inicio, horario_fim, motivo')
+        .lte('data_inicio', ordenadas[ordenadas.length - 1])
+        .gte('data_fim', ordenadas[0])
+
+    if (error) {
+        console.error('Erro ao buscar bloqueios:', error)
+        return { erro: true }
+    }
+
+    for (const data of ordenadas) {
+        for (const b of bloqueios || []) {
+
+            const pegaData = String(b.data_inicio) <= data && String(b.data_fim) >= data
+
+            const pegaHorario =
+                !b.horario_inicio ||
+                (horarioParaMinutos(b.horario_inicio) < fimMinutos &&
+                 horarioParaMinutos(b.horario_fim) > inicioMinutos)
+
+            if (pegaData && pegaHorario) {
+                return { encontrado: b, data }
+            }
+        }
+    }
+
+    return { encontrado: null }
+}
+
 function listaDeDatas(datas) {
     return datas.map(formatarDataBrasileira).join(', ')
 }
@@ -1405,6 +1476,57 @@ async function criarReservas(usuarioAutenticado, datas, dados) {
     const possuiPrioridade =
         usuarioAutenticado.tipo_usuario === 'PROFESSOR' ||
         usuarioAutenticado.tipo_usuario === 'ADMINISTRADOR'
+
+    // Horários bloqueados pelo administrador valem para todo mundo
+    const bloqueio = await encontrarBloqueio(datas, novoInicio, novoFim)
+
+    if (bloqueio.erro) {
+        return resposta(500, { sucesso: false, mensagem: 'Não foi possível verificar os bloqueios de horário.' })
+    }
+
+    if (bloqueio.encontrado) {
+        return resposta(409, {
+            sucesso: false,
+            mensagem:
+                'A quadra está bloqueada em ' + formatarDataBrasileira(bloqueio.data) +
+                (bloqueio.encontrado.horario_inicio
+                    ? ', das ' + formatarHorario(bloqueio.encontrado.horario_inicio) + ' às ' + formatarHorario(bloqueio.encontrado.horario_fim)
+                    : ' (dia inteiro)') +
+                ': ' + bloqueio.encontrado.motivo +
+                (datas.length > 1 ? '. Nada foi criado.' : '')
+        })
+    }
+
+    if (usuarioAutenticado.tipo_usuario === 'ALUNO') {
+
+        for (const data of datas) {
+
+            const semana = semanaDaData(data)
+
+            const { count, error: erroLimite } = await supabaseAdmin
+                .from('reserva')
+                .select('id_reserva', { count: 'exact', head: true })
+                .eq('id_usuario', usuarioAutenticado.id_usuario)
+                .in('status', ['PENDENTE', 'APROVADA'])
+                .gte('data_reserva', semana.inicio)
+                .lte('data_reserva', semana.fim)
+
+            if (erroLimite) {
+                console.error('Erro ao conferir limite semanal:', erroLimite)
+                return resposta(500, { sucesso: false, mensagem: 'Não foi possível conferir o seu limite de reservas.' })
+            }
+
+            if ((count || 0) >= LIMITE_RESERVAS_SEMANA_ALUNO) {
+                return resposta(409, {
+                    sucesso: false,
+                    mensagem:
+                        'Você já tem ' + LIMITE_RESERVAS_SEMANA_ALUNO + ' reservas na semana de ' +
+                        formatarDataBrasileira(semana.inicio) + ' a ' + formatarDataBrasileira(semana.fim) +
+                        ' (contando as pendentes). Cancele uma ou escolha outra semana.'
+                })
+            }
+        }
+    }
 
     const { data: reservasDasDatas, error: erroConflito } = await supabaseAdmin
         .from('reserva')
@@ -2392,6 +2514,18 @@ app.patch('/reclamacoes/:id', async (c) => {
 })
 
 registrarRotasHistoricoFeedback(app, supabaseAdmin, obterUsuarioAutenticado)
+
+registrarRotasContasBloqueios(app, {
+    supabase: supabaseAdmin,
+    obterUsuarioAutenticado,
+    contarFalhas,
+    registrarFalha,
+    obterIpCliente,
+    agoraEmBrasilia,
+    horarioParaMinutos,
+    formatarDataBrasileira,
+    formatarHorario
+})
 
 // ---------- Pendentes que passaram do horário ----------
 // Uma reserva pendente que terminou sem ser analisada é cancelada sozinha,

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="/LOGIN/login.css?v=4">
+    <link rel="icon" type="image/png" href="/LOGO/favicon.png">
+
+    <title>IFPlay · Nova senha</title>
+</head>
+<body>
+
+    <div class="logo">
+        <img src="/LOGO/logoifplaynova.png" alt="Logo IFPlay">
+    </div>
+
+    <main class="container">
+
+        <!-- Passo 1: pedir o link por e-mail -->
+        <form id="formEmail" hidden>
+            <h1>Esqueci a senha</h1>
+
+            <p class="texto-explicacao">
+                Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.
+            </p>
+
+            <div class="input-login">
+                <input type="email" id="email" placeholder="Seu e-mail" required autocomplete="email">
+                <i class="bx bxs-envelope"></i>
+            </div>
+
+            <p id="mensagemEmail" class="mensagem-login" role="status"></p>
+
+            <button type="submit" class="botao-login">Enviar link</button>
+        </form>
+
+        <!-- Passo 2: criar a nova senha (abre pelo link do e-mail) -->
+        <form id="formSenha" hidden>
+            <h1>Nova senha</h1>
+
+            <p class="texto-explicacao">
+                Crie uma senha só para o IFPlay, diferente da do SUAP.
+            </p>
+
+            <div class="input-login">
+                <input type="password" id="senha" placeholder="Nova senha" minlength="6" maxlength="72" required autocomplete="new-password">
+                <button type="button" class="botao-ver-senha" data-alvo="senha" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha">
+                    <i class="bx bx-show"></i>
+                </button>
+            </div>
+
+            <div class="input-login">
+                <input type="password" id="confirmarSenha" placeholder="Confirme a nova senha" minlength="6" maxlength="72" required autocomplete="new-password">
+                <button type="button" class="botao-ver-senha" data-alvo="confirmarSenha" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha">
+                    <i class="bx bx-show"></i>
+                </button>
+            </div>
+
+            <p id="mensagemSenha" class="mensagem-login" role="status"></p>
+
+            <button type="submit" class="botao-login">Salvar nova senha</button>
+        </form>
+
+        <a href="/index.html" class="link-cadastro">Voltar para o <strong>login</strong></a>
+
+    </main>
+
+    <script src="/LOGIN/mostrar-senha.js"></script>
+    <script src="redefinir.js?v=1"></script>
+
+</body>
+</html>

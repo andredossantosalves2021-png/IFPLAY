@@ -776,3 +776,39 @@ html.dark-mode .tag-evento {
         font-size: 15px;
     }
 }
+/* Bloqueios de horário (manutenção, feriado...) */
+.day.dia-bloqueado {
+    background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(107, 114, 128, 0.08) 0,
+        rgba(107, 114, 128, 0.08) 6px,
+        transparent 6px,
+        transparent 12px
+    );
+}
+
+.reservation.reservation-bloqueio {
+    background: #4b5563;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.aviso-bloqueio {
+    background: #f3f4f6;
+    border-left: 4px solid #4b5563;
+    color: #1f2937;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+html.dark-mode .reservation.reservation-bloqueio {
+    background: #64748b;
+}
+
+html.dark-mode .aviso-bloqueio {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-left-color: #94a3b8;
+}

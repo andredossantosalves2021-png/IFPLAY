@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloqueios de horário</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+            document.documentElement.className = isDark ? 'dark-mode' : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/ADMIN/admin.css?v=1">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>Bloqueios de horário</h1>
+
+            <p class="subtitulo">
+                Marque quando a quadra não pode ser usada (manutenção, feriado,
+                jogos interclasse...). Ninguém consegue reservar nesses horários,
+                e as reservas que já existirem nesse período são canceladas com aviso.
+            </p>
+
+            <h2>Novo bloqueio</h2>
+
+            <form id="formBloqueio" class="formulario" autocomplete="off">
+
+                <div class="campo">
+                    <label for="dataInicio">De</label>
+                    <input type="date" id="dataInicio" required>
+                </div>
+
+                <div class="campo">
+                    <label for="dataFim">Até</label>
+                    <input type="date" id="dataFim" required>
+                </div>
+
+                <div class="campo campo-check">
+                    <input type="checkbox" id="diaInteiro" checked>
+                    <label for="diaInteiro">Dia inteiro</label>
+                </div>
+
+                <div class="campo campo-horario" hidden>
+                    <label for="horarioInicio">Das</label>
+                    <input type="time" id="horarioInicio" value="07:00">
+                </div>
+
+                <div class="campo campo-horario" hidden>
+                    <label for="horarioFim">Às</label>
+                    <input type="time" id="horarioFim" value="12:00">
+                </div>
+
+                <div class="campo campo-largo">
+                    <label for="motivo">Motivo (aparece para todos)</label>
+                    <input type="text" id="motivo" maxlength="200" placeholder="Ex.: Manutenção do piso" required>
+                </div>
+
+                <button type="submit" class="botao">Bloquear</button>
+
+            </form>
+
+            <h2>Bloqueios ativos</h2>
+
+            <div id="lista" class="lista">
+                <p class="vazio">Carregando...</p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="/ADMIN/comum.js?v=1"></script>
+    <script src="bloqueios.js?v=1"></script>
+
+</body>
+
+</html>

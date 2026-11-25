@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários</title>
+
+    <script>
+        (function () {
+            const isDark = localStorage.getItem('tema') === 'true';
+            document.documentElement.className = isDark ? 'dark-mode' : '';
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/ADMIN/admin.css?v=1">
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>Usuários</h1>
+
+            <p class="subtitulo">
+                Aprove cadastros novos, mude o tipo de cada pessoa, desative contas
+                e envie um link para criar uma nova senha.
+            </p>
+
+            <div class="abas" role="tablist">
+                <button type="button" class="aba" data-aba="pendentes" role="tab">
+                    Cadastros pendentes
+                    <span class="contador" id="contadorPendentes" hidden>0</span>
+                </button>
+                <button type="button" class="aba" data-aba="todos" role="tab">
+                    Todos os usuários
+                </button>
+            </div>
+
+            <div id="painelTodos" hidden>
+                <div class="filtros">
+                    <div class="campo campo-largo">
+                        <label for="busca">Buscar por nome, RA ou e-mail</label>
+                        <input type="search" id="busca" placeholder="Digite para filtrar" autocomplete="off">
+                    </div>
+                    <div class="campo">
+                        <label for="filtroTipo">Tipo</label>
+                        <select id="filtroTipo">
+                            <option value="">Todos</option>
+                            <option value="ALUNO">Aluno</option>
+                            <option value="PROFESSOR">Professor</option>
+                            <option value="ADMINISTRADOR">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="filtroSituacao">Situação</label>
+                        <select id="filtroSituacao">
+                            <option value="">Todas</option>
+                            <option value="APROVADO">Ativa</option>
+                            <option value="DESATIVADO">Desativada</option>
+                            <option value="REJEITADO">Recusada</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lista" class="lista">
+                <p class="vazio">Carregando...</p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="/ADMIN/comum.js?v=1"></script>
+    <script src="usuarios.js?v=2"></script>
+
+</body>
+
+</html>

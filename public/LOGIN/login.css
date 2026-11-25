@@ -232,3 +232,33 @@ body {
     transform: none;
     font-size: 20px;
 }
+
+.link-esqueci {
+    display: block;
+    text-align: right;
+    margin: 2px 14px 4px 0;
+    font-size: 13px;
+    color: #022468;
+    text-decoration: none;
+}
+
+.link-esqueci:hover {
+    text-decoration: underline;
+}
+
+/* Tela de redefinir senha */
+.texto-explicacao {
+    text-align: center;
+    font-size: 14px;
+    color: #374151;
+    margin: 0 0 12px;
+    line-height: 1.45;
+}
+
+.mensagem-login.sucesso {
+    color: #065f46;
+}
+
+[hidden] {
+    display: none !important;
+}

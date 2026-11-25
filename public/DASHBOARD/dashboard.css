@@ -53,6 +53,12 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Tela aberta no momento */
+.btn-action.ativo {
+    background-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
 .usuario-info {
     display: flex;
     align-items: center;

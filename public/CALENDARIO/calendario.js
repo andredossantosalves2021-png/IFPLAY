@@ -15,7 +15,55 @@ let anoAtual = dataAtual.getFullYear();
 let mesAtual = dataAtual.getMonth();
 
 let reservas = {};
+let bloqueiosPorDia = {};
 let tempoNotificacao;
+
+// Bloqueios de horário (manutenção, feriado...) entram no calendário
+async function carregarBloqueios() {
+
+    try {
+
+        const resposta = await fetch('/bloqueios');
+        const resultado = await resposta.json();
+
+        if (!resultado.sucesso) {
+            return;
+        }
+
+        bloqueiosPorDia = {};
+
+        (resultado.bloqueios || []).forEach(function (bloqueio) {
+
+            const [ai, mi, di] = bloqueio.data_inicio.split('-').map(Number);
+            const [af, mf, df] = bloqueio.data_fim.split('-').map(Number);
+
+            const dia = new Date(ai, mi - 1, di);
+            const fim = new Date(af, mf - 1, df);
+
+            // Limite de segurança: no máximo 1 ano de dias por bloqueio
+            for (let i = 0; dia <= fim && i < 370; i++) {
+
+                const chave = dia.getFullYear() + '-' + dia.getMonth() + '-' + dia.getDate();
+
+                if (!bloqueiosPorDia[chave]) {
+                    bloqueiosPorDia[chave] = [];
+                }
+
+                bloqueiosPorDia[chave].push({
+                    motivo: bloqueio.motivo,
+                    horario: bloqueio.horario_inicio
+                        ? formatarHorario(bloqueio.horario_inicio) + ' - ' + formatarHorario(bloqueio.horario_fim)
+                        : 'Dia inteiro'
+                });
+
+                dia.setDate(dia.getDate() + 1);
+            }
+        });
+
+    } catch (erro) {
+        console.error('Erro ao carregar bloqueios:', erro);
+    }
+}
 
 const tituloMes = document.querySelector('.calendar-controls h2');
 const grid = document.querySelector('.calendar-grid');
@@ -87,6 +135,8 @@ async function carregarReservas() {
     );
 
     try {
+
+        await carregarBloqueios();
 
         const resposta =
             await fetch(
@@ -334,6 +384,24 @@ function gerarCalendario(
         const reservasDoDia =
             reservas[chave];
 
+        const bloqueiosDoDia =
+            bloqueiosPorDia[chave];
+
+        if (bloqueiosDoDia && bloqueiosDoDia.length > 0) {
+
+            celula.classList.add('dia-bloqueado');
+
+            bloqueiosDoDia.slice(0, 1).forEach(function (bloqueio) {
+
+                const tag = document.createElement('div');
+                tag.className = 'reservation reservation-bloqueio';
+                tag.textContent = 'Bloqueado • ' + bloqueio.horario;
+                tag.title = bloqueio.motivo;
+
+                celula.appendChild(tag);
+            });
+        }
+
         if (
             reservasDoDia &&
             reservasDoDia.length > 0
@@ -494,6 +562,19 @@ function abrirDetalhes(
     modal.appendChild(
         titulo
     );
+
+    const bloqueiosDoDia =
+        bloqueiosPorDia[ano + '-' + mes + '-' + dia] || [];
+
+    bloqueiosDoDia.forEach(function (bloqueio) {
+
+        const aviso = document.createElement('div');
+        aviso.className = 'aviso-bloqueio';
+        aviso.textContent =
+            'Quadra bloqueada (' + bloqueio.horario + '): ' + bloqueio.motivo;
+
+        modal.appendChild(aviso);
+    });
 
     if (
         reservasDoDia &&
