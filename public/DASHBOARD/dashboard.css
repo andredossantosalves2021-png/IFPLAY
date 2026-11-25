@@ -162,6 +162,63 @@ body {
     overflow-y: auto;
 }
 
+/* Abas por tipo (só para administrador) */
+.filtros-notificacoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.filtros-notificacoes[hidden] {
+    display: none;
+}
+
+.filtros-notificacoes:not([hidden]) + .lista-notificacoes {
+    max-height: 335px;
+}
+
+.filtro-notificacao {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    background-color: #ffffff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.filtro-notificacao:hover {
+    border-color: #008550;
+}
+
+.filtro-notificacao.ativo {
+    background-color: #008550;
+    border-color: #008550;
+    color: #ffffff;
+}
+
+.filtro-contador {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background-color: #dc2626;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .item-notificacao {
     width: 100%;
     display: block;
@@ -312,6 +369,26 @@ html.dark-mode .painel-notificacoes-cabecalho h3 {
 
 html.dark-mode .painel-notificacoes-cabecalho p {
     color: #94a3b8;
+}
+
+html.dark-mode .filtros-notificacoes {
+    border-bottom-color: #334155;
+}
+
+html.dark-mode .filtro-notificacao {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html.dark-mode .filtro-notificacao:hover {
+    border-color: #10b981;
+}
+
+html.dark-mode .filtro-notificacao.ativo {
+    background-color: #047857;
+    border-color: #047857;
+    color: #ffffff;
 }
 
 html.dark-mode .item-notificacao {
@@ -556,5 +633,13 @@ html.dark-mode .btn-cancelar:hover {
         right: 12px;
         width: auto;
         max-height: 70vh;
+    }
+
+    .lista-notificacoes {
+        max-height: calc(70vh - 80px);
+    }
+
+    .filtros-notificacoes:not([hidden]) + .lista-notificacoes {
+        max-height: calc(70vh - 170px);
     }
 }

@@ -68,9 +68,9 @@ const horarioInicio =
         'horarioInicio'
     );
 
-const duracao =
+const horarioFim =
     document.getElementById(
-        'duracao'
+        'horarioFim'
     );
 
 const resumoReserva =
@@ -373,34 +373,20 @@ checkbox.addEventListener(
     atualizarModoReserva
 );
 
-for (
-    let hora = 7;
-    hora <= 17;
-    hora++
-) {
+// Limites da reserva (o servidor confere os mesmos valores)
+const ABERTURA_MINUTOS =
+    7 * 60;
 
-    const horario =
-        String(hora).padStart(
-            2,
-            '0'
-        ) +
-        ':00';
+const FECHAMENTO_MINUTOS =
+    21 * 60;
 
-    const option =
-        document.createElement(
-            'option'
-        );
+const DURACAO_MAXIMA_MINUTOS =
+    4 * 60;
 
-    option.value =
-        horario;
-
-    option.textContent =
-        horario;
-
-    horarioInicio.appendChild(
-        option
-    );
-}
+// Duração escolhida por último. Quando o horário inicial muda,
+// o final acompanha mantendo essa duração.
+let duracaoAtualMinutos =
+    60;
 
 function converterHorarioEmMinutos(
     horario
@@ -450,51 +436,205 @@ function converterMinutosEmHorario(
     );
 }
 
-function atualizarResumo() {
+// Devolve a mensagem de erro do horário da reserva única,
+// ou null quando está tudo certo.
+function erroHorarioReservaUnica(
+    inicio,
+    fim
+) {
 
-    const inicio =
-        horarioInicio.value;
-
-    if (!inicio) {
-
-        resumoReserva.textContent =
-            'Selecione um horário.';
-
-        return;
+    if (
+        !inicio ||
+        !fim
+    ) {
+        return 'Preencha o horário inicial e final.';
     }
-
-    const horas =
-        Number(
-            duracao.value
-        );
 
     const inicioMinutos =
         converterHorarioEmMinutos(
             inicio
         );
 
-    const finalMinutos =
-        inicioMinutos +
-        horas * 60;
-
-    const final =
-        converterMinutosEmHorario(
-            finalMinutos
+    const fimMinutos =
+        converterHorarioEmMinutos(
+            fim
         );
+
+    if (
+        inicioMinutos <
+        ABERTURA_MINUTOS
+    ) {
+        return 'O horário inicial deve ser a partir das 07:00.';
+    }
+
+    if (
+        fimMinutos >
+        FECHAMENTO_MINUTOS
+    ) {
+        return 'O horário final não pode ultrapassar 21:00.';
+    }
+
+    if (
+        fimMinutos <=
+        inicioMinutos
+    ) {
+        return 'O horário final precisa ser depois do horário inicial.';
+    }
+
+    if (
+        fimMinutos - inicioMinutos >
+        DURACAO_MAXIMA_MINUTOS
+    ) {
+        return 'A reserva pode durar no máximo 4 horas.';
+    }
+
+    return null;
+}
+
+function formatarDuracao(
+    totalMinutos
+) {
+
+    const horas =
+        Math.floor(
+            totalMinutos / 60
+        );
+
+    const minutos =
+        totalMinutos % 60;
+
+    if (horas === 0) {
+        return minutos + ' min';
+    }
+
+    if (minutos === 0) {
+        return horas + 'h';
+    }
+
+    return (
+        horas +
+        'h' +
+        String(minutos).padStart(
+            2,
+            '0'
+        )
+    );
+}
+
+function atualizarResumo() {
+
+    const inicio =
+        horarioInicio.value;
+
+    const fim =
+        horarioFim.value;
+
+    const erro =
+        erroHorarioReservaUnica(
+            inicio,
+            fim
+        );
+
+    resumoReserva.classList.toggle(
+        'erro',
+        Boolean(erro)
+    );
+
+    if (erro) {
+
+        resumoReserva.textContent =
+            erro;
+
+        return;
+    }
 
     resumoReserva.textContent =
         inicio +
         ' às ' +
-        final;
+        fim +
+        ' (' +
+        formatarDuracao(
+            converterHorarioEmMinutos(fim) -
+            converterHorarioEmMinutos(inicio)
+        ) +
+        ')';
+}
+
+// Mudou o início: o final anda junto, mantendo a duração
+function ajustarFimPeloInicio() {
+
+    if (!horarioInicio.value) {
+
+        atualizarResumo();
+
+        return;
+    }
+
+    const inicioMinutos =
+        converterHorarioEmMinutos(
+            horarioInicio.value
+        );
+
+    const novoFim =
+        Math.min(
+            inicioMinutos +
+            duracaoAtualMinutos,
+            FECHAMENTO_MINUTOS
+        );
+
+    if (
+        novoFim >
+        inicioMinutos
+    ) {
+
+        horarioFim.value =
+            converterMinutosEmHorario(
+                novoFim
+            );
+    }
+
+    atualizarResumo();
+}
+
+// Mudou o final: guarda a nova duração (se for válida)
+function guardarDuracaoPeloFim() {
+
+    if (
+        !erroHorarioReservaUnica(
+            horarioInicio.value,
+            horarioFim.value
+        )
+    ) {
+
+        duracaoAtualMinutos =
+            converterHorarioEmMinutos(
+                horarioFim.value
+            ) -
+            converterHorarioEmMinutos(
+                horarioInicio.value
+            );
+    }
+
+    atualizarResumo();
 }
 
 horarioInicio.addEventListener(
     'change',
+    ajustarFimPeloInicio
+);
+
+horarioInicio.addEventListener(
+    'input',
     atualizarResumo
 );
 
-duracao.addEventListener(
+horarioFim.addEventListener(
     'change',
+    guardarDuracaoPeloFim
+);
+
+horarioFim.addEventListener(
+    'input',
     atualizarResumo
 );
 
@@ -860,54 +1000,16 @@ function validarReservaUnica() {
         return false;
     }
 
-    const horas =
-        Number(
-            duracao.value
+    const erroHorario =
+        erroHorarioReservaUnica(
+            inicio,
+            horarioFim.value
         );
 
-    if (
-        !horas ||
-        horas < 1 ||
-        horas > 4
-    ) {
+    if (erroHorario) {
 
         mostrarNotificacao(
-            'A duração deve ser entre 1 e 4 horas.',
-            'aviso'
-        );
-
-        return false;
-    }
-
-    const inicioMinutos =
-        converterHorarioEmMinutos(
-            inicio
-        );
-
-    const finalMinutos =
-        inicioMinutos +
-        horas * 60;
-
-    if (
-        inicioMinutos <
-        7 * 60
-    ) {
-
-        mostrarNotificacao(
-            'O horário inicial deve ser a partir das 07:00.',
-            'aviso'
-        );
-
-        return false;
-    }
-
-    if (
-        finalMinutos >
-        21 * 60
-    ) {
-
-        mostrarNotificacao(
-            'O horário final não pode ultrapassar 21:00.',
+            erroHorario,
             'aviso'
         );
 
@@ -935,7 +1037,10 @@ function limparFormulario() {
 
     atualizarModoReserva();
 
-    atualizarResumo();
+    duracaoAtualMinutos =
+        60;
+
+    atualizarHorariosDisponiveis();
 
     localStorage.removeItem(
         CHAVE_RASCUNHO_AGENDA
@@ -1090,24 +1195,8 @@ formReserva.addEventListener(
         const inicio =
             horarioInicio.value;
 
-        const horas =
-            Number(
-                duracao.value
-            );
-
-        const inicioMinutos =
-            converterHorarioEmMinutos(
-                inicio
-            );
-
-        const finalMinutos =
-            inicioMinutos +
-            horas * 60;
-
         const horaFinal =
-            converterMinutosEmHorario(
-                finalMinutos
-            );
+            horarioFim.value;
 
         try {
 
@@ -1201,8 +1290,8 @@ function salvarRascunho() {
         horarioInicio:
             horarioInicio.value,
 
-        duracao:
-            duracao.value
+        horarioFim:
+            horarioFim.value
     };
 
     localStorage.setItem(
@@ -1263,11 +1352,30 @@ function restaurarRascunho() {
             rascunho.horarioInicio ||
             '07:00';
 
-        duracao.value =
-            rascunho.duracao ||
-            '1';
+        if (rascunho.horarioFim) {
 
-        atualizarResumo();
+            horarioFim.value =
+                rascunho.horarioFim;
+
+        } else {
+
+            // Rascunho antigo (com "duração" em horas)
+            const horasAntigas =
+                Number(rascunho.duracao) || 1;
+
+            horarioFim.value =
+                converterMinutosEmHorario(
+                    Math.min(
+                        converterHorarioEmMinutos(
+                            horarioInicio.value
+                        ) +
+                        horasAntigas * 60,
+                        FECHAMENTO_MINUTOS
+                    )
+                );
+        }
+
+        guardarDuracaoPeloFim();
 
     } catch (erro) {
 
@@ -1312,7 +1420,7 @@ function aplicarDataDoCalendario() {
     atividade,
     dataReserva,
     horarioInicio,
-    duracao
+    horarioFim
 ].forEach(
     (campo) => {
 
@@ -1333,48 +1441,49 @@ restaurarRascunho();
 aplicarDataDoCalendario();
 
 // ---------- Horários que já passaram (reserva única) ----------
-// Quando a data escolhida é hoje, os horários que já passaram ficam
-// desativados na lista. O servidor também confere isso ao salvar.
+// Quando a data escolhida é hoje e o horário inicial já passou, ele é
+// adiantado para os próximos 5 minutos (o final acompanha).
+// O servidor também confere isso ao salvar.
 
 function atualizarHorariosDisponiveis() {
 
-    const opcoes =
-        Array.from(
-            horarioInicio.options
-        );
-
-    opcoes.forEach(
-        (opcao) => {
-
-            const passou =
-                horarioJaPassou(
-                    dataReserva.value,
-                    opcao.value
-                );
-
-            opcao.disabled =
-                passou;
-        }
-    );
-
-    const selecionada =
-        horarioInicio.selectedOptions[0];
-
     if (
-        !selecionada ||
-        selecionada.disabled
+        horarioInicio.value &&
+        horarioJaPassou(
+            dataReserva.value,
+            horarioInicio.value
+        )
     ) {
 
-        const primeiraLivre =
-            opcoes.find(
-                (opcao) =>
-                    !opcao.disabled
+        const agora =
+            new Date();
+
+        const minutosAgora =
+            agora.getHours() * 60 +
+            agora.getMinutes();
+
+        const proximoInicio =
+            Math.max(
+                Math.ceil(
+                    (minutosAgora + 1) / 5
+                ) * 5,
+                ABERTURA_MINUTOS
             );
 
-        horarioInicio.value =
-            primeiraLivre
-                ? primeiraLivre.value
-                : '';
+        if (
+            proximoInicio <
+            FECHAMENTO_MINUTOS
+        ) {
+
+            horarioInicio.value =
+                converterMinutosEmHorario(
+                    proximoInicio
+                );
+
+            ajustarFimPeloInicio();
+
+            return;
+        }
     }
 
     atualizarResumo();

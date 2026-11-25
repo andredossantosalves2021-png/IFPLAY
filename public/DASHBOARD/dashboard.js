@@ -52,7 +52,160 @@ const painelNotificacoes =
 const listaNotificacoes =
     document.getElementById('listaNotificacoes')
 
+const filtrosNotificacoes =
+    document.getElementById('filtrosNotificacoes')
+
 let notificacoes = []
+
+const ehAdministrador =
+    usuario.tipo_usuario === 'ADMINISTRADOR'
+
+// Nome que aparece em cada notificação, conforme o tipo salvo no banco
+const ROTULOS_TIPO_NOTIFICACAO = {
+    RESERVA_PENDENTE: 'Reserva para aprovar',
+    RESERVA_APROVADA: 'Reserva aprovada',
+    RESERVA_CANCELADA: 'Reserva cancelada',
+    RECLAMACAO_NOVA: 'Nova reclamação',
+    CADASTRO_PENDENTE: 'Cadastro para aprovar',
+    FEEDBACK_PROBLEMA: 'Avaliação com problema'
+}
+
+// Abas do administrador. Cada tipo de notificação cai em uma aba;
+// tipos que não estão em nenhuma lista vão para "Outros".
+const CATEGORIAS_ADMIN = [
+    { id: 'todas', rotulo: 'Todas', tipos: null },
+    { id: 'reservas', rotulo: 'Reservas para aprovar', tipos: ['RESERVA_PENDENTE'] },
+    { id: 'reclamacoes', rotulo: 'Reclamações', tipos: ['RECLAMACAO_NOVA'] },
+    { id: 'cadastros', rotulo: 'Cadastros', tipos: ['CADASTRO_PENDENTE'] },
+    { id: 'avaliacoes', rotulo: 'Avaliações', tipos: ['FEEDBACK_PROBLEMA'] },
+    { id: 'outros', rotulo: 'Outros', tipos: [] }
+]
+
+const TIPOS_COM_ABA_PROPRIA =
+    CATEGORIAS_ADMIN.flatMap(
+        function (categoria) {
+            return categoria.tipos || []
+        }
+    )
+
+let categoriaSelecionada = 'todas'
+
+function notificacaoPertenceACategoria(
+    notificacao,
+    categoria
+) {
+
+    if (categoria.id === 'todas') {
+        return true
+    }
+
+    if (categoria.id === 'outros') {
+        return !TIPOS_COM_ABA_PROPRIA.includes(
+            notificacao.tipo
+        )
+    }
+
+    return categoria.tipos.includes(
+        notificacao.tipo
+    )
+}
+
+function obterCategoriaSelecionada() {
+
+    return (
+        CATEGORIAS_ADMIN.find(
+            function (categoria) {
+                return categoria.id === categoriaSelecionada
+            }
+        ) || CATEGORIAS_ADMIN[0]
+    )
+}
+
+function renderizarFiltrosNotificacoes() {
+
+    if (!ehAdministrador) {
+        filtrosNotificacoes.hidden = true
+        return
+    }
+
+    filtrosNotificacoes.hidden = false
+    filtrosNotificacoes.innerHTML = ''
+
+    CATEGORIAS_ADMIN.forEach(
+        function (categoria) {
+
+            const daCategoria =
+                notificacoes.filter(
+                    function (notificacao) {
+                        return notificacaoPertenceACategoria(
+                            notificacao,
+                            categoria
+                        )
+                    }
+                )
+
+            // "Outros" só aparece quando há algo nela
+            if (
+                categoria.id === 'outros' &&
+                daCategoria.length === 0
+            ) {
+                return
+            }
+
+            const naoLidas =
+                daCategoria.filter(
+                    function (notificacao) {
+                        return !notificacao.lida
+                    }
+                ).length
+
+            const botaoFiltro =
+                document.createElement('button')
+
+            botaoFiltro.type = 'button'
+            botaoFiltro.className = 'filtro-notificacao'
+            botaoFiltro.setAttribute('role', 'tab')
+
+            const ativo =
+                categoria.id === categoriaSelecionada
+
+            botaoFiltro.classList.toggle('ativo', ativo)
+            botaoFiltro.setAttribute(
+                'aria-selected',
+                ativo ? 'true' : 'false'
+            )
+
+            const texto =
+                document.createElement('span')
+
+            texto.textContent = categoria.rotulo
+
+            botaoFiltro.appendChild(texto)
+
+            if (naoLidas > 0) {
+
+                const contador =
+                    document.createElement('span')
+
+                contador.className = 'filtro-contador'
+                contador.textContent =
+                    naoLidas > 99 ? '99+' : String(naoLidas)
+
+                botaoFiltro.appendChild(contador)
+            }
+
+            botaoFiltro.addEventListener(
+                'click',
+                function () {
+                    categoriaSelecionada = categoria.id
+                    renderizarNotificacoes()
+                }
+            )
+
+            filtrosNotificacoes.appendChild(botaoFiltro)
+        }
+    )
+}
 
 function formatarDataNotificacao(data) {
 
@@ -115,7 +268,7 @@ function atualizarContadorNotificacoes() {
     )
 }
 
-function criarEstadoVazio() {
+function criarEstadoVazio(textoTitulo, textoDescricao) {
 
     const vazio =
         document.createElement('div')
@@ -133,12 +286,14 @@ function criarEstadoVazio() {
         document.createElement('strong')
 
     titulo.textContent =
+        textoTitulo ||
         'Nenhuma notificação'
 
     const texto =
         document.createElement('span')
 
     texto.textContent =
+        textoDescricao ||
         'Quando houver um aviso, ele aparecerá aqui.'
 
     vazio.appendChild(icone)
@@ -177,22 +332,10 @@ function criarItemNotificacao(
     tipo.className =
         'notificacao-tipo'
 
-    if (
-        notificacao.tipo ===
-        'RESERVA_CANCELADA'
-    ) {
-        tipo.textContent =
-            'Reserva cancelada'
-    } else if (
-        notificacao.tipo ===
-        'FEEDBACK_PROBLEMA'
-    ) {
-        tipo.textContent =
-            'Avaliação com problema'
-    } else {
-        tipo.textContent =
-            'Aviso'
-    }
+    tipo.textContent =
+        ROTULOS_TIPO_NOTIFICACAO[
+            notificacao.tipo
+        ] || 'Aviso'
 
     topo.appendChild(tipo)
 
@@ -253,12 +396,34 @@ function renderizarNotificacoes() {
     listaNotificacoes.innerHTML =
         ''
 
+    renderizarFiltrosNotificacoes()
+
+    const categoria =
+        obterCategoriaSelecionada()
+
+    const visiveis =
+        ehAdministrador
+            ? notificacoes.filter(
+                function (notificacao) {
+                    return notificacaoPertenceACategoria(
+                        notificacao,
+                        categoria
+                    )
+                }
+            )
+            : notificacoes
+
     if (
-        notificacoes.length === 0
+        visiveis.length === 0
     ) {
 
         listaNotificacoes.appendChild(
-            criarEstadoVazio()
+            ehAdministrador && categoria.id !== 'todas'
+                ? criarEstadoVazio(
+                    'Nada em "' + categoria.rotulo + '"',
+                    'Os avisos desse tipo aparecerão aqui.'
+                )
+                : criarEstadoVazio()
         )
 
         atualizarContadorNotificacoes()
@@ -266,7 +431,7 @@ function renderizarNotificacoes() {
         return
     }
 
-    notificacoes.forEach(
+    visiveis.forEach(
         function (notificacao) {
 
             listaNotificacoes.appendChild(

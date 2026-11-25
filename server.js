@@ -202,6 +202,16 @@ app.post('/cadastro', async (c) => {
             return c.json({ sucesso: false, mensagem: error.message }, 400)
         }
 
+        await notificarAdministradores(
+            'Novo cadastro de ' +
+            (ehAluno ? 'aluno' : 'professor') +
+            ' aguardando aprovação: ' +
+            nomeLimpo +
+            (ehAluno ? ' (RA ' + raLimpo + ')' : '') +
+            '. Veja na tela de Cadastros.',
+            'CADASTRO_PENDENTE'
+        )
+
         return c.json({
             sucesso: true,
             mensagem: 'Cadastro enviado! Aguarde a aprovação de um administrador.'
@@ -869,6 +879,54 @@ app.patch('/reservas/:id', async (c) => {
             }
         }
 
+        // Avisa o dono quando a reserva pendente é aprovada (só uma vez)
+        if (
+            novoStatus === 'APROVADA' &&
+            reserva.status === 'PENDENTE' &&
+            !ehDono
+        ) {
+
+            const mensagemAprovada =
+                'Sua reserva de ' +
+                (reserva.modalidade || 'quadra') +
+                ' do dia ' +
+                formatarDataBrasileira(
+                    reserva.data_reserva
+                ) +
+                ', das ' +
+                formatarHorario(
+                    reserva.horario_inicio
+                ) +
+                ' às ' +
+                formatarHorario(
+                    reserva.horario_fim
+                ) +
+                ', foi aprovada. Bom jogo!'
+
+            const {
+                error: erroAprovada
+            } = await supabaseAdmin
+                .from('notificacao')
+                .insert([{
+                    mensagem:
+                        mensagemAprovada,
+                    tipo:
+                        'RESERVA_APROVADA',
+                    lida:
+                        false,
+                    id_usuario:
+                        reserva.id_usuario
+                }])
+
+            if (erroAprovada) {
+
+                console.error(
+                    'Erro ao criar notificação de aprovação:',
+                    erroAprovada
+                )
+            }
+        }
+
         return c.json({
             sucesso: true,
             reserva: data[0]
@@ -930,6 +988,53 @@ function formatarHorario(horario) {
         .slice(0, 5)
 }
 
+// Manda a mesma notificação para todos os administradores.
+// Se falhar, só registra o erro: a ação principal (reserva, reclamação,
+// cadastro) já foi salva e não deve ser desfeita por causa do aviso.
+async function notificarAdministradores(mensagem, tipo) {
+
+    try {
+
+        const {
+            data: admins,
+            error: erroAdmins
+        } = await supabaseAdmin
+            .from('usuario')
+            .select('id_usuario')
+            .eq('tipo_usuario', 'ADMINISTRADOR')
+
+        if (erroAdmins) {
+            console.error('Erro ao buscar administradores:', erroAdmins)
+            return
+        }
+
+        if (!admins || admins.length === 0) {
+            return
+        }
+
+        const { error: erroAviso } = await supabaseAdmin
+            .from('notificacao')
+            .insert(admins.map((admin) => ({
+                mensagem: mensagem,
+                tipo: tipo,
+                lida: false,
+                id_usuario: admin.id_usuario
+            })))
+
+        if (erroAviso) {
+            console.error('Erro ao avisar administradores (' + tipo + '):', erroAviso)
+        }
+
+    } catch (erro) {
+        console.error('Erro ao avisar administradores (' + tipo + '):', erro)
+    }
+}
+
+// Limites de qualquer reserva (única ou recorrente)
+const HORARIO_ABERTURA_MINUTOS = 7 * 60
+const HORARIO_FECHAMENTO_MINUTOS = 21 * 60
+const DURACAO_MAXIMA_MINUTOS = 4 * 60
+
 app.post('/reservas', async (c) => {
 
     try {
@@ -989,6 +1094,20 @@ app.post('/reservas', async (c) => {
             horarioParaMinutos(horario_inicio) >= horarioParaMinutos(horario_fim)
         ) {
             return c.json({ sucesso: false, mensagem: 'Data ou horário inválido.' }, 400)
+        }
+
+        if (
+            horarioParaMinutos(horario_inicio) < HORARIO_ABERTURA_MINUTOS ||
+            horarioParaMinutos(horario_fim) > HORARIO_FECHAMENTO_MINUTOS
+        ) {
+            return c.json({ sucesso: false, mensagem: 'A quadra pode ser reservada das 07:00 às 21:00.' }, 400)
+        }
+
+        if (
+            horarioParaMinutos(horario_fim) - horarioParaMinutos(horario_inicio) >
+            DURACAO_MAXIMA_MINUTOS
+        ) {
+            return c.json({ sucesso: false, mensagem: 'A reserva pode durar no máximo 4 horas.' }, 400)
         }
 
         const agoraBrasilia = new Date()
@@ -1408,6 +1527,24 @@ app.post('/reservas', async (c) => {
             }
         }
 
+        // Reserva de aluno chega como pendente: avisa os administradores
+        if (status === 'PENDENTE') {
+
+            await notificarAdministradores(
+                (usuarioAutenticado.nome || 'Um aluno') +
+                ' pediu uma reserva de ' +
+                modalidade +
+                ' para o dia ' +
+                formatarDataBrasileira(data_reserva) +
+                ', das ' +
+                formatarHorario(horario_inicio) +
+                ' às ' +
+                formatarHorario(horario_fim) +
+                '. Aprove ou recuse na tela de Reservas.',
+                'RESERVA_PENDENTE'
+            )
+        }
+
         return c.json({
             sucesso: true,
             reserva:
@@ -1781,6 +1918,19 @@ app.post('/reclamacoes', async (c) => {
                 400
             )
         }
+
+        const descricaoCurta =
+            descricao.trim().length > 120
+                ? descricao.trim().slice(0, 117) + '...'
+                : descricao.trim()
+
+        await notificarAdministradores(
+            (usuarioAutenticado.nome || 'Um usuário') +
+            ' enviou uma reclamação: "' +
+            descricaoCurta +
+            '". Veja na tela de Reclamações.',
+            'RECLAMACAO_NOVA'
+        )
 
         return c.json({
             sucesso: true,
