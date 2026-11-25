@@ -240,6 +240,14 @@ body {
     background-color: #d1fae5;
 }
 
+.item-notificacao.com-destino {
+    cursor: pointer;
+}
+
+.item-notificacao.com-destino:not(.nao-lida):hover {
+    background-color: #f3f4f6;
+}
+
 .notificacao-topo {
     display: flex;
     justify-content: space-between;
@@ -402,6 +410,10 @@ html.dark-mode .item-notificacao.nao-lida {
 
 html.dark-mode .item-notificacao.nao-lida:hover {
     background-color: #064e3b;
+}
+
+html.dark-mode .item-notificacao.com-destino:not(.nao-lida):hover {
+    background-color: #1e293b;
 }
 
 html.dark-mode .notificacao-tipo {
@@ -642,4 +654,39 @@ html.dark-mode .btn-cancelar:hover {
     .filtros-notificacoes:not([hidden]) + .lista-notificacoes {
         max-height: calc(70vh - 170px);
     }
+}
+/* ---------- Layout sem rolagem ----------
+   A página ocupa exatamente a altura da tela: a barra de cima fica fixa
+   e o iframe usa o espaço que sobra. Só o conteúdo de dentro do iframe rola. */
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    align-items: stretch;
+}
+
+main {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    flex-shrink: 0;
+}
+
+.iframe-container {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: clamp(8px, 2vh, 20px);
+}
+
+iframe {
+    height: 100%;
 }

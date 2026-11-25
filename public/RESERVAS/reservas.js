@@ -1835,6 +1835,36 @@ botoesStatus.forEach(
     }
 );
 
+// Abre já num filtro vindo do link (ex.: reservas.html?filtro=pendentes,
+// usado quando o administrador clica numa notificação de reserva pendente)
+const filtroDoLink =
+    new URLSearchParams(
+        window.location.search
+    ).get('filtro');
+
+const botaoDoLink =
+    Array.from(botoesFiltro).find(
+        (botao) =>
+            botao.dataset.filtro === filtroDoLink &&
+            botao.style.display !== 'none'
+    );
+
+if (botaoDoLink) {
+
+    botoesFiltro.forEach(
+        (botao) => {
+
+            botao.classList.toggle(
+                'ativo',
+                botao === botaoDoLink
+            );
+        }
+    );
+
+    filtroAtual =
+        filtroDoLink;
+}
+
 atualizarTitulo();
 
 atualizarFiltrosStatus();

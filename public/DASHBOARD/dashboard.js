@@ -1,10 +1,73 @@
-const usuario = JSON.parse(
-    localStorage.getItem('usuario')
-)
+let usuario = null
+
+try {
+    usuario = JSON.parse(
+        localStorage.getItem('usuario')
+    )
+} catch (erro) {
+    usuario = null
+}
 
 if (!usuario) {
+    localStorage.removeItem('usuario')
     window.location.replace('../index.html')
+    throw new Error('Sem usuário salvo.')
 }
+
+// O localStorage serve só para desenhar a tela rápido. Quem diz quem
+// está logado (e se é administrador) é o servidor, pelo cookie de sessão.
+async function validarSessaoNoServidor() {
+
+    try {
+
+        const resposta =
+            await fetch('/minha-sessao', { cache: 'no-store' })
+
+        if (resposta.status === 401) {
+            localStorage.removeItem('usuario')
+            window.location.replace('../index.html')
+            return
+        }
+
+        const dados =
+            await resposta.json()
+
+        if (!dados.sucesso || !dados.usuario) {
+            return
+        }
+
+        const doServidor =
+            dados.usuario
+
+        const mudou =
+            Number(doServidor.id_usuario) !== Number(usuario.id_usuario) ||
+            doServidor.tipo_usuario !== usuario.tipo_usuario ||
+            doServidor.nome !== usuario.nome
+
+        if (mudou) {
+
+            const idMudou =
+                Number(doServidor.id_usuario) !== Number(usuario.id_usuario)
+
+            localStorage.setItem(
+                'usuario',
+                JSON.stringify(
+                    idMudou
+                        ? doServidor
+                        : { ...usuario, ...doServidor }
+                )
+            )
+
+            window.location.reload()
+        }
+
+    } catch (erro) {
+        // Sem conexão: as rotas do servidor continuam exigindo a sessão
+        console.error('Não foi possível validar a sessão:', erro)
+    }
+}
+
+validarSessaoNoServidor()
 
 document.getElementById('boasVindas').textContent =
     'Bem-vindo, ' + usuario.nome + '!'
@@ -89,6 +152,30 @@ const TIPOS_COM_ABA_PROPRIA =
     )
 
 let categoriaSelecionada = 'todas'
+
+// Para onde o administrador vai ao clicar em cada tipo de notificação
+const DESTINOS_ADMIN = {
+    RESERVA_PENDENTE: '../RESERVAS/reservas.html?filtro=pendentes',
+    RECLAMACAO_NOVA: '../RECLAMACOES/reclamacoes.html',
+    CADASTRO_PENDENTE: '../CADASTROS/cadastros.html',
+    FEEDBACK_PROBLEMA: '../HISTORICO/historico.html'
+}
+
+function obterDestinoNotificacao(notificacao) {
+
+    if (!ehAdministrador) {
+        return null
+    }
+
+    return DESTINOS_ADMIN[notificacao.tipo] || null
+}
+
+function abrirNoDashboard(destino) {
+
+    fecharPainelNotificacoes()
+
+    iframe.src = destino
+}
 
 function notificacaoPertenceACategoria(
     notificacao,
@@ -320,6 +407,14 @@ function criarItemNotificacao(
         item.classList.add('nao-lida')
     }
 
+    const destino =
+        obterDestinoNotificacao(notificacao)
+
+    if (destino) {
+        item.classList.add('com-destino')
+        item.title = 'Abrir'
+    }
+
     const topo =
         document.createElement('div')
 
@@ -377,6 +472,10 @@ function criarItemNotificacao(
     item.addEventListener(
         'click',
         async function () {
+
+            if (destino) {
+                abrirNoDashboard(destino)
+            }
 
             if (notificacao.lida) {
                 return

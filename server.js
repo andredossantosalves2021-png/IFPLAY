@@ -33,13 +33,6 @@ app.use('*', async (c, next) => {
     await next()
 })
 
-app.use(
-    '/*',
-    serveStatic({
-        root: './public'
-    })
-)
-
 const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY,
@@ -49,6 +42,110 @@ const supabaseAdmin = createClient(
             persistSession: false
         }
     }
+)
+
+// ---------- Páginas protegidas ----------
+// Antes, as telas só conferiam o localStorage, que qualquer um edita no
+// navegador. Agora o servidor só entrega as páginas .html internas para
+// quem tem uma sessão válida (cookie), e as de administrador só para admin.
+// Regra "negar por padrão": toda página .html é protegida, menos as públicas.
+
+const PAGINAS_PUBLICAS = new Set([
+    '/',
+    '/index.html',
+    '/cadastro/cadastro.html'
+])
+
+const PAGINAS_ADMIN = new Set([
+    '/cadastros/cadastros.html',
+    '/historico/historico.html'
+])
+
+function normalizarCaminho(caminho) {
+
+    let texto
+
+    try {
+        texto = decodeURIComponent(caminho)
+    } catch {
+        texto = caminho
+    }
+
+    const partes = []
+
+    for (const parte of texto.replace(/\\/g, '/').split('/')) {
+
+        if (parte === '' || parte === '.') {
+            continue
+        }
+
+        if (parte === '..') {
+            partes.pop()
+            continue
+        }
+
+        partes.push(parte)
+    }
+
+    return ('/' + partes.join('/')).toLowerCase()
+}
+
+function paginaSemPermissao(mensagem) {
+
+    return (
+        '<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>IFPlay</title></head>' +
+        '<body style="font-family:sans-serif;display:flex;align-items:center;' +
+        'justify-content:center;height:100vh;margin:0;color:#374151">' +
+        '<p>' + mensagem + '</p></body></html>'
+    )
+}
+
+app.use('*', async (c, next) => {
+
+    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+        return next()
+    }
+
+    const caminho = normalizarCaminho(c.req.path)
+
+    const ehPagina =
+        caminho.endsWith('.html') ||
+        caminho.endsWith('.htm')
+
+    if (!ehPagina || PAGINAS_PUBLICAS.has(caminho)) {
+        return next()
+    }
+
+    const usuario = await obterUsuarioAutenticado(c)
+
+    if (!usuario) {
+
+        // Dentro do iframe do dashboard, o próprio dashboard leva para o login
+        return c.redirect('/index.html', 302)
+    }
+
+    if (
+        PAGINAS_ADMIN.has(caminho) &&
+        usuario.tipo_usuario !== 'ADMINISTRADOR'
+    ) {
+        return c.html(
+            paginaSemPermissao('Esta página é só para administradores.'),
+            403
+        )
+    }
+
+    c.header('Cache-Control', 'no-store')
+
+    return next()
+})
+
+app.use(
+    '/*',
+    serveStatic({
+        root: './public'
+    })
 )
 
 async function obterUsuarioAutenticado(c) {
