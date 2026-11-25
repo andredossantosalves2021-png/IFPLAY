@@ -280,6 +280,26 @@ export function registrarRotasContasBloqueios(app, deps) {
                 return c.json({ sucesso: false, mensagem: 'Nada para alterar.' }, 400)
             }
 
+            // Um administrador não muda a função nem desativa outro administrador
+            const { data: alvo } = await supabase
+                .from('usuario')
+                .select('id_usuario, tipo_usuario')
+                .eq('id_usuario', id)
+                .maybeSingle()
+
+            if (!alvo) {
+                return c.json({ sucesso: false, mensagem: 'Usuário não encontrado.' }, 404)
+            }
+
+            if (
+                alvo.tipo_usuario === 'ADMINISTRADOR' &&
+                id !== Number(admin.id_usuario) &&
+                ((atualizacao.tipo_usuario && atualizacao.tipo_usuario !== 'ADMINISTRADOR') ||
+                 atualizacao.status_cadastro === 'DESATIVADO')
+            ) {
+                return c.json({ sucesso: false, mensagem: 'Um administrador não pode mudar a função nem desativar outro administrador.' }, 403)
+            }
+
             // Evita que o admin tire o próprio acesso sem querer
             if (
                 id === Number(admin.id_usuario) &&

@@ -420,6 +420,22 @@ app.patch('/cadastros/:id', async (c) => {
             return c.json({ sucesso: false, mensagem: 'Status inválido.' }, 400)
         }
 
+        // Esta rota só decide cadastros novos (pendentes). Mudanças em contas
+        // já existentes passam pela tela de Usuários, que tem as próprias regras.
+        const { data: cadastro } = await supabaseAdmin
+            .from('usuario')
+            .select('id_usuario, status_cadastro')
+            .eq('id_usuario', id)
+            .maybeSingle()
+
+        if (!cadastro) {
+            return c.json({ sucesso: false, mensagem: 'Cadastro não encontrado.' }, 404)
+        }
+
+        if (cadastro.status_cadastro !== 'PENDENTE') {
+            return c.json({ sucesso: false, mensagem: 'Este cadastro já foi analisado.' }, 409)
+        }
+
         const atualizacao = { status_cadastro: novoStatus }
 
         if (novoStatus === 'APROVADO') {

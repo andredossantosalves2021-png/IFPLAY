@@ -215,9 +215,22 @@ function itemUsuario(u) {
 
     const acoes = criar('div', 'item-acoes');
 
+    // Administradores (você ou outro) não têm a função alterada por aqui:
+    // aparece só o nome da função, sem a lista.
+    const ehAdmin = u.tipo_usuario === 'ADMINISTRADOR';
+
+    if (ehAdmin) {
+
+        const funcao = criar('span', 'selo', 'Administrador');
+        funcao.title = souEu
+            ? 'Você não pode mudar a sua própria função'
+            : 'Um administrador não pode mudar a função de outro administrador';
+
+        acoes.appendChild(funcao);
+    }
+
     const select = criarSelectTipo(u.tipo_usuario);
-    select.disabled = souEu;
-    select.title = souEu ? 'Você não pode mudar o seu próprio tipo' : 'Mudar tipo';
+    select.title = 'Mudar tipo';
 
     select.addEventListener('change', async () => {
 
@@ -243,7 +256,9 @@ function itemUsuario(u) {
         carregar();
     });
 
-    acoes.appendChild(select);
+    if (!ehAdmin) {
+        acoes.appendChild(select);
+    }
 
     if (ativo) {
         acoes.appendChild(criarBotao('Enviar link de nova senha', 'botao-secundario', async () => {
@@ -260,7 +275,8 @@ function itemUsuario(u) {
         }));
     }
 
-    if (!souEu && (ativo || u.status_cadastro === 'DESATIVADO')) {
+    // Desativar: nunca a si mesmo nem outro administrador ativo
+    if (!souEu && !(ehAdmin && ativo) && (ativo || u.status_cadastro === 'DESATIVADO')) {
 
         acoes.appendChild(criarBotao(ativo ? 'Desativar' : 'Reativar', ativo ? 'botao-perigo' : '', async () => {
 
