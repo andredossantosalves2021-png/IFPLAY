@@ -256,3 +256,37 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .modal-aviso { animation: none; }
 }
+
+/* Botão de mostrar/esconder senha (fica no lugar do cadeado) */
+.botao-ver-senha {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.botao-ver-senha:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.botao-ver-senha:focus-visible {
+    outline: 2px solid #022468;
+    outline-offset: 1px;
+}
+
+.input-cadastro .botao-ver-senha i {
+    position: static;
+    transform: none;
+    font-size: 20px;
+}

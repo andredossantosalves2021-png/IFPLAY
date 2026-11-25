@@ -118,6 +118,14 @@ const listaNotificacoes =
 const filtrosNotificacoes =
     document.getElementById('filtrosNotificacoes')
 
+const acoesNotificacoes =
+    document.getElementById('acoesNotificacoes')
+
+// Seleção de várias notificações para marcar como lidas
+let modoSelecao = false
+
+const selecionadas = new Set()
+
 let notificacoes = []
 
 const ehAdministrador =
@@ -410,9 +418,28 @@ function criarItemNotificacao(
     const destino =
         obterDestinoNotificacao(notificacao)
 
-    if (destino) {
+    if (destino && !modoSelecao) {
         item.classList.add('com-destino')
         item.title = 'Abrir'
+    }
+
+    const estaSelecionada =
+        selecionadas.has(notificacao.id_notificacao)
+
+    if (modoSelecao) {
+
+        item.classList.add('selecionavel')
+        item.classList.toggle('selecionada', estaSelecionada)
+        item.setAttribute('aria-pressed', estaSelecionada ? 'true' : 'false')
+
+        const marcador =
+            document.createElement('span')
+
+        marcador.className = 'marcador-selecao'
+        marcador.setAttribute('aria-hidden', 'true')
+        marcador.innerHTML = estaSelecionada ? '<i class="fa-solid fa-check"></i>' : ''
+
+        item.appendChild(marcador)
     }
 
     const topo =
@@ -473,6 +500,19 @@ function criarItemNotificacao(
         'click',
         async function () {
 
+            if (modoSelecao) {
+
+                if (selecionadas.has(notificacao.id_notificacao)) {
+                    selecionadas.delete(notificacao.id_notificacao)
+                } else {
+                    selecionadas.add(notificacao.id_notificacao)
+                }
+
+                renderizarNotificacoes()
+
+                return
+            }
+
             if (destino) {
                 abrirNoDashboard(destino)
             }
@@ -490,6 +530,196 @@ function criarItemNotificacao(
     return item
 }
 
+function obterNotificacoesVisiveis() {
+
+    if (!ehAdministrador) {
+        return notificacoes
+    }
+
+    const categoria =
+        obterCategoriaSelecionada()
+
+    return notificacoes.filter(
+        function (notificacao) {
+            return notificacaoPertenceACategoria(
+                notificacao,
+                categoria
+            )
+        }
+    )
+}
+
+function criarBotaoAcao(texto, aoClicar, opcoes) {
+
+    const botao =
+        document.createElement('button')
+
+    botao.type = 'button'
+    botao.className = 'acao-notificacao' + (opcoes && opcoes.principal ? ' principal' : '')
+    botao.textContent = texto
+    botao.disabled = Boolean(opcoes && opcoes.desativado)
+
+    botao.addEventListener('click', aoClicar)
+
+    return botao
+}
+
+function sairDoModoSelecao() {
+
+    modoSelecao = false
+    selecionadas.clear()
+
+    renderizarNotificacoes()
+}
+
+function renderizarAcoesNotificacoes(visiveis) {
+
+    acoesNotificacoes.innerHTML = ''
+
+    // Tira da seleção o que não está mais na tela (aba trocada ou lista recarregada)
+    const idsVisiveis =
+        new Set(visiveis.map((n) => n.id_notificacao))
+
+    Array.from(selecionadas).forEach(
+        function (id) {
+            if (!idsVisiveis.has(id)) {
+                selecionadas.delete(id)
+            }
+        }
+    )
+
+    const naoLidasVisiveis =
+        visiveis.filter((n) => !n.lida)
+
+    if (visiveis.length === 0) {
+        acoesNotificacoes.hidden = true
+        return
+    }
+
+    acoesNotificacoes.hidden = false
+
+    if (!modoSelecao) {
+
+        acoesNotificacoes.appendChild(
+            criarBotaoAcao(
+                'Selecionar',
+                function () {
+                    modoSelecao = true
+                    renderizarNotificacoes()
+                }
+            )
+        )
+
+        acoesNotificacoes.appendChild(
+            criarBotaoAcao(
+                'Marcar todas como lidas',
+                function () {
+                    marcarVariasComoLidas(
+                        naoLidasVisiveis.map((n) => n.id_notificacao)
+                    )
+                },
+                { desativado: naoLidasVisiveis.length === 0 }
+            )
+        )
+
+        return
+    }
+
+    const todasSelecionadas =
+        selecionadas.size === visiveis.length
+
+    acoesNotificacoes.appendChild(
+        criarBotaoAcao(
+            todasSelecionadas ? 'Desmarcar todas' : 'Selecionar todas',
+            function () {
+
+                if (todasSelecionadas) {
+                    selecionadas.clear()
+                } else {
+                    visiveis.forEach((n) => selecionadas.add(n.id_notificacao))
+                }
+
+                renderizarNotificacoes()
+            }
+        )
+    )
+
+    acoesNotificacoes.appendChild(
+        criarBotaoAcao('Cancelar', sairDoModoSelecao)
+    )
+
+    const idsParaMarcar =
+        visiveis
+            .filter((n) => selecionadas.has(n.id_notificacao) && !n.lida)
+            .map((n) => n.id_notificacao)
+
+    acoesNotificacoes.appendChild(
+        criarBotaoAcao(
+            'Marcar como lidas' + (selecionadas.size > 0 ? ' (' + selecionadas.size + ')' : ''),
+            async function () {
+
+                if (idsParaMarcar.length > 0) {
+                    const ok = await marcarVariasComoLidas(idsParaMarcar)
+                    if (!ok) return
+                }
+
+                sairDoModoSelecao()
+            },
+            { principal: true, desativado: selecionadas.size === 0 }
+        )
+    )
+}
+
+async function marcarVariasComoLidas(ids) {
+
+    if (!ids || ids.length === 0) {
+        return true
+    }
+
+    try {
+
+        const resposta =
+            await fetch(
+                '/notificacoes/lidas',
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: ids })
+                }
+            )
+
+        const dados =
+            await resposta.json()
+
+        if (!resposta.ok || !dados.sucesso) {
+            throw new Error(dados.mensagem || 'Erro ao atualizar notificações.')
+        }
+
+        const marcadas =
+            new Set(dados.ids || [])
+
+        notificacoes.forEach(
+            function (notificacao) {
+                if (marcadas.has(notificacao.id_notificacao)) {
+                    notificacao.lida = true
+                }
+            }
+        )
+
+        renderizarNotificacoes()
+
+        return true
+
+    } catch (erro) {
+
+        console.error(erro)
+
+        alert('Não foi possível marcar as notificações como lidas. Tente novamente.')
+
+        return false
+    }
+}
+
 function renderizarNotificacoes() {
 
     listaNotificacoes.innerHTML =
@@ -501,16 +731,11 @@ function renderizarNotificacoes() {
         obterCategoriaSelecionada()
 
     const visiveis =
-        ehAdministrador
-            ? notificacoes.filter(
-                function (notificacao) {
-                    return notificacaoPertenceACategoria(
-                        notificacao,
-                        categoria
-                    )
-                }
-            )
-            : notificacoes
+        obterNotificacoesVisiveis()
+
+    renderizarAcoesNotificacoes(visiveis)
+
+    listaNotificacoes.classList.toggle('modo-selecao', modoSelecao)
 
     if (
         visiveis.length === 0
@@ -589,6 +814,8 @@ async function carregarNotificacoes() {
 
         erroElemento.textContent =
             'Não foi possível carregar as notificações.'
+
+        acoesNotificacoes.hidden = true
 
         listaNotificacoes.appendChild(
             erroElemento
@@ -669,6 +896,12 @@ function abrirPainelNotificacoes() {
 }
 
 function fecharPainelNotificacoes() {
+
+    if (modoSelecao) {
+        modoSelecao = false
+        selecionadas.clear()
+        renderizarNotificacoes()
+    }
 
     painelNotificacoes.classList.remove(
         'ativo'

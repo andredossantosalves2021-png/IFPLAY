@@ -158,8 +158,84 @@ body {
 }
 
 .lista-notificacoes {
-    max-height: 420px;
+    max-height: 375px;
     overflow-y: auto;
+}
+
+/* Barra de ações: selecionar várias / marcar como lidas */
+.acoes-notificacoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.acoes-notificacoes[hidden] {
+    display: none;
+}
+
+.acao-notificacao {
+    border: none;
+    background: transparent;
+    color: #047857;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 8px;
+    border-radius: 16px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.acao-notificacao:hover:not(:disabled) {
+    background-color: #ecfdf5;
+}
+
+.acao-notificacao.principal {
+    background-color: #008550;
+    color: #ffffff;
+}
+
+.acao-notificacao.principal:hover:not(:disabled) {
+    background-color: #047857;
+}
+
+.acao-notificacao:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.item-notificacao.selecionavel {
+    position: relative;
+    padding-left: 52px;
+    cursor: pointer;
+}
+
+.marcador-selecao {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #9ca3af;
+    border-radius: 6px;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 11px;
+}
+
+.item-notificacao.selecionada .marcador-selecao {
+    background-color: #008550;
+    border-color: #008550;
+}
+
+.item-notificacao.selecionavel:not(.nao-lida):hover {
+    background-color: #f3f4f6;
 }
 
 /* Abas por tipo (só para administrador) */
@@ -175,8 +251,8 @@ body {
     display: none;
 }
 
-.filtros-notificacoes:not([hidden]) + .lista-notificacoes {
-    max-height: 335px;
+.filtros-notificacoes:not([hidden]) ~ .lista-notificacoes {
+    max-height: 290px;
 }
 
 .filtro-notificacao {
@@ -379,8 +455,36 @@ html.dark-mode .painel-notificacoes-cabecalho p {
     color: #94a3b8;
 }
 
-html.dark-mode .filtros-notificacoes {
+html.dark-mode .filtros-notificacoes,
+html.dark-mode .acoes-notificacoes {
     border-bottom-color: #334155;
+}
+
+html.dark-mode .acao-notificacao {
+    color: #6ee7b7;
+}
+
+html.dark-mode .acao-notificacao:hover:not(:disabled) {
+    background-color: #1e293b;
+}
+
+html.dark-mode .acao-notificacao.principal {
+    background-color: #047857;
+    color: #ffffff;
+}
+
+html.dark-mode .marcador-selecao {
+    background-color: #0f172a;
+    border-color: #64748b;
+}
+
+html.dark-mode .item-notificacao.selecionada .marcador-selecao {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+html.dark-mode .item-notificacao.selecionavel:not(.nao-lida):hover {
+    background-color: #1e293b;
 }
 
 html.dark-mode .filtro-notificacao {
@@ -648,11 +752,11 @@ html.dark-mode .btn-cancelar:hover {
     }
 
     .lista-notificacoes {
-        max-height: calc(70vh - 80px);
+        max-height: calc(70vh - 125px);
     }
 
-    .filtros-notificacoes:not([hidden]) + .lista-notificacoes {
-        max-height: calc(70vh - 170px);
+    .filtros-notificacoes:not([hidden]) ~ .lista-notificacoes {
+        max-height: calc(70vh - 215px);
     }
 }
 /* ---------- Layout sem rolagem ----------

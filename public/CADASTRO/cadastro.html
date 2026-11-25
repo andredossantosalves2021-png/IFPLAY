@@ -10,7 +10,7 @@
     <link rel="stylesheet"
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
 
-    <link rel="stylesheet" href="/CADASTRO/cadastro.css?v=5">
+    <link rel="stylesheet" href="/CADASTRO/cadastro.css?v=6">
 
     <link rel="icon" type="image/png" href="/LOGO/favicon.png">
 
@@ -81,7 +81,16 @@
                     minlength="6"
                     required
                 >
-                <i class="bx bxs-lock-alt"></i>
+                <button
+                    type="button"
+                    class="botao-ver-senha"
+                    data-alvo="senha"
+                    aria-label="Mostrar senha"
+                    aria-pressed="false"
+                    title="Mostrar senha"
+                >
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
             <div class="input-cadastro">
@@ -92,7 +101,16 @@
                     minlength="6"
                     required
                 >
-                <i class="bx bxs-lock-alt"></i>
+                <button
+                    type="button"
+                    class="botao-ver-senha"
+                    data-alvo="confirmarSenha"
+                    aria-label="Mostrar senha"
+                    aria-pressed="false"
+                    title="Mostrar senha"
+                >
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
             <p id="mensagemErro" class="mensagem-erro"></p>
@@ -124,6 +142,7 @@
     </div>
 
     <script src="/CADASTRO/cadastro.js?v=3"></script>
+    <script src="/LOGIN/mostrar-senha.js"></script>
 
 </body>
 </html> 

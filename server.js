@@ -1730,6 +1730,63 @@ app.get('/notificacoes', async (c) => {
     }
 })
 
+// Marca várias notificações como lidas de uma vez.
+// Fica antes de '/notificacoes/:id' para "lidas" não ser lido como um id.
+app.patch('/notificacoes/lidas', async (c) => {
+
+    try {
+
+        const usuarioAutenticado = await obterUsuarioAutenticado(c)
+
+        if (!usuarioAutenticado) {
+            return c.json({ sucesso: false, mensagem: 'É necessário fazer login.' }, 401)
+        }
+
+        let body = {}
+
+        try {
+            body = await c.req.json()
+        } catch {
+            body = {}
+        }
+
+        const ids = Array.isArray(body.ids)
+            ? [...new Set(body.ids.map(Number))]
+            : []
+
+        if (
+            ids.length === 0 ||
+            ids.length > 500 ||
+            !ids.every((id) => Number.isInteger(id) && id > 0)
+        ) {
+            return c.json({ sucesso: false, mensagem: 'Lista de notificações inválida.' }, 400)
+        }
+
+        // O filtro por id_usuario garante que só as notificações da própria
+        // pessoa são alteradas, mesmo que venham ids de outra pessoa.
+        const { data, error } = await supabaseAdmin
+            .from('notificacao')
+            .update({ lida: true })
+            .in('id_notificacao', ids)
+            .eq('id_usuario', usuarioAutenticado.id_usuario)
+            .select('id_notificacao')
+
+        if (error) {
+            console.error(error)
+            return c.json({ sucesso: false, mensagem: 'Não foi possível atualizar as notificações.' }, 400)
+        }
+
+        return c.json({
+            sucesso: true,
+            ids: (data || []).map((n) => n.id_notificacao)
+        })
+
+    } catch (erro) {
+        console.error(erro)
+        return c.json({ sucesso: false, mensagem: 'Erro interno do servidor.' }, 500)
+    }
+})
+
 app.patch('/notificacoes/:id', async (c) => {
 
     try {
