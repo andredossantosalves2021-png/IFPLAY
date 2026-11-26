@@ -3,11 +3,17 @@ const mensagemErro = document.getElementById('mensagemErro');
 const campoRa = document.getElementById('campoRa');
 const inputRa = document.getElementById('ra');
 const radiosTipo = document.querySelectorAll('input[name="tipoCadastro"]');
+const subtitulo = document.querySelector('.subtitulo');
 
 function atualizarCampoRa() {
 
     const tipoSelecionado =
         document.querySelector('input[name="tipoCadastro"]:checked').value;
+
+    subtitulo.textContent =
+        tipoSelecionado === 'ALUNO'
+            ? 'Cadastro de Aluno'
+            : 'Cadastro de Professor/Servidor';
 
     if (tipoSelecionado === 'ALUNO') {
         campoRa.style.display = 'block';
